@@ -1,0 +1,126 @@
+#!/bin/bash
+
+#
+# Initializes the APKM in the current directory.
+#
+# Also:
+#
+# *   Initializes a SQLite database, creating its tables.
+# *   Initializes a GIT repository, commiting all existing markdown files.
+#
+# Usage:
+#
+#     # Backup!
+#     apkm-init.sh
+#
+# How to undo initialization:
+#
+#     # Be careful and backup!
+#     rm -rf DIRECTORY/.apkm
+#     rm -rf DIRECTORY/.git
+#
+# Where DIRECTORY is where this init script was executed.
+#
+
+PROGDIR=`dirname $0`
+source "$PROGDIR/apkm-common.sh"
+
+function apkm_init_fs {
+    
+    echo "----------------------"
+    echo "Init directory"
+    echo "----------------------"
+   
+    mkdir --verbose --parents "$BASEDIR/.apkm"
+    mkdir --verbose --parents "$BASEDIR/.apkm/html"
+    mkdir --verbose --parents "$BASEDIR/.apkm/meta"
+    
+cat > "$BASEDIR/.apkm/conf.txt" <<EOF
+# empty
+EOF
+
+}
+
+function apkm_init_db {
+
+    echo "----------------------"
+    echo "Init SQLite"
+    echo "----------------------"
+    
+    sqlite3 -echo "$BASEDIR/.apkm/meta.db" <<EOF
+-- Create metadata table
+CREATE TABLE meta_ (
+    uuid_ TEXT, -- UUIDv8 of the file path
+    path_ TEXT, -- Path relative to the base directory
+    name_ TEXT, -- File name
+    hash_ TEXT, -- File hash
+    crdt_ TEXT, -- Create date
+    updt_ TEXT, -- Update date
+    tags_ TEXT, -- Comma separated values
+    CONSTRAINT meta_uuid_ PRIMARY KEY (uuid_)
+) STRICT;
+-- Create links table
+CREATE TABLE link_ (
+    orig_ TEXT, -- UUIDv8 of the origin file
+    dest_ TEXT, -- UUIDv8 of the destination file
+    href_ TEXT NOT NULL, -- Link destination as in the text
+    type_ TEXT NOT NULL, -- Link type: Internal (I), External (E)
+    brok_ INTEGER DEFAULT 0, -- Broken link: unknown (0), broken (1)
+    CHECK (type_ IN ('I', 'E')),
+    CHECK (brok_ IN (0, 1)),
+    PRIMARY KEY (orig_, dest_),
+    FOREIGN KEY (orig_) REFERENCES meta_ (uuid_),
+    FOREIGN KEY (dest_) REFERENCES meta_ (uuid_)
+) STRICT;
+EOF
+
+}
+
+function apkm_init_git {
+    
+    echo "----------------------"
+    echo "Init GIT"
+    echo "----------------------"
+    
+    git init --initial-branch=main
+    git config user.name "apkm"
+    git config user.email "apkm@example.com"
+    find "$BASEDIR/" -type f -name "*.md" -exec git add {} \;
+    git commit -m "[apkm] init"
+
+cat > .gitignore <<EOF
+.apkm/*
+.gitignore
+EOF
+
+}
+
+if [[ ! -d "$BASEDIR" ]];
+then
+    echo "Base directory not found."
+    exit 1;
+fi;
+
+if [[ -d "$BASEDIR/.apkm" ]];
+then
+    echo "APKM already initialized in this directory."
+    exit 1;
+fi;
+
+if [[ -f "$BASEDIR/.apkm/meta.db" ]];
+then
+    echo "SQLite already initialized in this directory." 1>&2;
+    exit 1;
+fi;
+
+if [[ -d "$BASEDIR/.git" ]];
+then
+    echo "GIT already initialized in this directory." 1>&2;
+    exit 1;
+fi;
+
+apkm_init_fs;
+apkm_init_db;
+apkm_init_git;
+
+

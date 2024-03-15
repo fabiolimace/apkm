@@ -5,6 +5,12 @@ APKM stands for Awk Personal Knowledge Management.
 
 It is a set of tools for managing a collection of markdown files.
 
+Dependencies:
+
+* Git;
+* SQLite;
+* Gawk or Busybox.
+
 Directory structure
 ------------------------------------------------------
 
@@ -80,7 +86,7 @@ The links table schema:
 CREATE TABLE link_ (
     orig_ TEXT, -- UUIDv8 of the origin file
     dest_ TEXT, -- UUIDv8 of the destination file
-    href_ TEXT, -- Link destination as in the text
+    href_ TEXT NOT NULL, -- Link destination as in the text
     type_ TEXT NOT NULL, -- Link type: Internal (I), External (E)
     brok_ INTEGER DEFAULT 0, -- Broken link: unknown (0), broken (1)
     CHECK (type_ IN ('I', 'E')),
