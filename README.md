@@ -112,9 +112,16 @@ This is a list of features to be implemented:
     - The metadata will be saved as files in .apkm/meta.
     - The metadata will also be saved in a SQLite database in .apkm/meta.db.
 
+Goals:
+* Make it Busybox `awk` and GNU's `gawk`
+
+References for Busybox `awk`:
+
+* https://wiki.alpinelinux.org/wiki/Awk
+* https://wiki.alpinelinux.org/wiki/Regex
+
 License
 ------------------------------------------------------
 
 This project is Open Source software released under the [MIT license](https://opensource.org/licenses/MIT).
-
 
