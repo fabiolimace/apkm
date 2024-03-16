@@ -9,7 +9,10 @@ Dependencies:
 
 * Git;
 * SQLite;
-* Gawk or Busybox.
+* GNU's gawk or Busybox's awk.
+* GNU's bash or Busybox's ash.
+
+You must `cd` to the directory where your markdown collection in order to use the tools.
 
 Directory structure
 ------------------------------------------------------
