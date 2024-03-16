@@ -22,8 +22,8 @@
 # Where DIRECTORY is where this init script was executed.
 #
 
-PROGDIR=`dirname $0`
-source "$PROGDIR/apkm-common.sh"
+source "`dirname "$0"`/apkm-common.sh" || exit 1;
+validate_program_path || exit 1;
 
 function apkm_init_fs {
     
@@ -31,12 +31,12 @@ function apkm_init_fs {
     echo "Init directory"
     echo "----------------------"
    
-    mkdir --verbose --parents "$BASEDIR/.apkm"
-    mkdir --verbose --parents "$BASEDIR/.apkm/html"
-    mkdir --verbose --parents "$BASEDIR/.apkm/meta"
+    mkdir --verbose --parents "$WORKING_DIR/.apkm"
+    mkdir --verbose --parents "$WORKING_DIR/.apkm/html"
+    mkdir --verbose --parents "$WORKING_DIR/.apkm/meta"
     
-cat > "$BASEDIR/.apkm/conf.txt" <<EOF
-# empty
+cat > "$WORKING_DIR/.apkm/conf.txt" <<EOF
+busybox.httpd.bind=localhost:9000
 EOF
 
 }
@@ -47,7 +47,7 @@ function apkm_init_db {
     echo "Init SQLite"
     echo "----------------------"
     
-    sqlite3 -echo "$BASEDIR/.apkm/meta.db" <<EOF
+    sqlite3 -echo "$WORKING_DIR/.apkm/meta.db" <<EOF
 -- Create metadata table
 CREATE TABLE meta_ (
     uuid_ TEXT, -- UUIDv8 of the file path
@@ -85,35 +85,36 @@ function apkm_init_git {
     git init --initial-branch=main
     git config user.name "apkm"
     git config user.email "apkm@example.com"
-    find "$BASEDIR/" -type f -name "*.md" -exec git add {} \;
+    find "$WORKING_DIR/" -type f -name "*.md" -exec git add {} \;
     git commit -m "[apkm] init"
 
 cat > .gitignore <<EOF
+.git/*
 .apkm/*
 .gitignore
 EOF
 
 }
 
-if [[ ! -d "$BASEDIR" ]];
+if [[ ! -d "$WORKING_DIR" ]];
 then
     echo "Base directory not found."
     exit 1;
 fi;
 
-if [[ -d "$BASEDIR/.apkm" ]];
+if [[ -d "$WORKING_DIR/.apkm" ]];
 then
     echo "APKM already initialized in this directory."
     exit 1;
 fi;
 
-if [[ -f "$BASEDIR/.apkm/meta.db" ]];
+if [[ -f "$WORKING_DIR/.apkm/meta.db" ]];
 then
     echo "SQLite already initialized in this directory." 1>&2;
     exit 1;
 fi;
 
-if [[ -d "$BASEDIR/.git" ]];
+if [[ -d "$WORKING_DIR/.git" ]];
 then
     echo "GIT already initialized in this directory." 1>&2;
     exit 1;
