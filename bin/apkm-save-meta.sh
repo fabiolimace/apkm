@@ -29,7 +29,7 @@ function save_meta_fs {
     UUID="`path_uuid "$FILE"`"
     ROAD="$FILE"
     NAME="`basename "$FILE"`"
-    HASH="`path_hash "$FILE"`"
+    HASH="`file_hash "$FILE"`"
     CRDT="`now`"
     UPDT="`now`"
     

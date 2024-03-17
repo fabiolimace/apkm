@@ -80,7 +80,7 @@ function now {
 
 function file_hash {
     local FILE="${1}"
-    sha1sum ${FILE} | head -c 40
+    sha1sum "${FILE}" | head -c 40
 }
 
 function path_hash {
