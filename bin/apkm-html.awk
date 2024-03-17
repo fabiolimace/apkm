@@ -48,9 +48,11 @@ function pop(    tag) {
 
 function print_buf() {
 
-    buf = styles(buf);
-    buf = images(buf);
-    buf = links(buf);
+    if (peek() != "pre") {
+        buf = styles(buf);
+        buf = images(buf);
+        buf = links(buf);
+    }
 
     if (buf != "") {
         print buf;
@@ -339,7 +341,7 @@ BEGIN {
 }
 
 
-/^[ ]*$/ {
+/^[ ]{,3}$/ {
     
     while (!empty()) {
         pop();

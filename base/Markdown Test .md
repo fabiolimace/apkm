@@ -54,6 +54,8 @@ Foi a base para a graphic novel e o filme From Hell, bem como outras dramatizaç
     isto é um bloco de código 1
     isto é um bloco de código 2
     isto é um bloco de código 3
+    
+    Há muitos fatos que contradizem a **teoria de Knight**, e sua principal referência, **Joseph Gorman** (também conhecido como Joseph Sickert), posteriormente retratou a história e admitiu à imprensa que era uma farsa. O livro foi popular e bem sucedido comercialmente, passando por 20 edições.
 
 Foi a base para a graphic novel e o filme From Hell, bem como outras dramatizações, e influenciou escritores de ficção criminal, como Patricia Cornwell e Anne Perry. 
 
