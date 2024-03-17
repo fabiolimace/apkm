@@ -428,11 +428,9 @@ BEGIN {
     if (empty()) {
     
         id++;
+        push("pre", "id", id);
         
-        push("pre", "id", id)
-        
-        button="<button onclick='clipboard(" id ")' title='Copy to clipboard' style='float: right;'>📋</button>";
-        append("\n" button);
+        append("<button onclick='clipboard(" id ")' title='Copy to clipboard' style='float: right;'>📋</button>");
     }
     
     if (peek() == "pre") {
