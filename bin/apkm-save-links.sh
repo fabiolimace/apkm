@@ -14,6 +14,7 @@ validate_program_and_working_paths || exit 1;
 function save_links_fs {
     local FILE="${1}"
     local META=`path_meta "$FILE" "link"`
+    mkdir --parents "`dirname "$META"`"
     "$PROGRAM_DIR/apkm-list-links.awk" "$FILE" > "$META"
 }
 

@@ -16,6 +16,8 @@ function save_meta_fs {
     local FILE="${1}"
     local META=`path_meta "$FILE" "meta"`
     
+    mkdir --parents "`dirname "$META"`"
+    
     local UUID # UUIDv8 of the file path
     local ROAD # Path relative to the base directory
     local NAME # File name
