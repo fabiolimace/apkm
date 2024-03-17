@@ -36,7 +36,7 @@ function apkm_init_fs {
     mkdir --verbose --parents "$WORKING_DIR/.apkm/meta"
     
 cat > "$WORKING_DIR/.apkm/conf.txt" <<EOF
-busybox.httpd.bind=localhost:9000
+busybox.httpd.port=127.0.0.1:9000
 EOF
 
 }

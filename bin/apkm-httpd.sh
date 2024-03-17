@@ -10,23 +10,22 @@
 # Configuration:
 #
 #     # file .apkm/conf.txt
-#     busybox.httpd.bind=127.0.0.1:9000
+#     busybox.httpd.port=127.0.0.1:9000
 #
 
 source "`dirname "$0"`/apkm-common.sh" || exit 1;
 validate_program_and_working_paths || exit 1;
 
-PROPERTY_BIND="busybox.httpd.bind"
-PROPERTY_BIND_DEFAULT=127.0.0.1:9000
+PROPERTY_PORT="busybox.httpd.port"
+PROPERTY_PORT_DEFAULT=127.0.0.1:9000
 
-function busybox_httpd_bind {
-    local PROPERTY_BIND="busybox.httpd.bind"
-    local BIND=`grep -E "^$PROPERTY_BIND" "$WORKING_DIR/.apkm/conf.txt" | sed "s/$PROPERTY_BIND=//"`;
-    if [[ -n "$BIND" ]];
+function busybox_httpd_port {
+    local PORT=`grep -E "^$PROPERTY_PORT" "$WORKING_DIR/.apkm/conf.txt" | sed "s/$PROPERTY_PORT=//"`;
+    if [[ -n "$PORT" ]];
     then
-        echo $BIND;
+        echo $PORT;
     else
-        echo $PROPERTY_BIND_DEFAULT;
+        echo $PROPERTY_PORT_DEFAULT;
     fi;
 }
 
@@ -39,8 +38,8 @@ function busybox_httpd_stop {
 }
 
 function busybox_httpd_start {
-    local BIND=`busybox_httpd_bind`;
-    busybox httpd -p "$BIND" -h "$WORKING_DIR/.apkm/html/"
+    local PORT=`busybox_httpd_port`;
+    busybox httpd -p "$PORT" -h "$WORKING_DIR/.apkm/html/"
 }
 
 busybox_httpd_stop;
