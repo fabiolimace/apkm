@@ -90,6 +90,8 @@ function normalize_href {
         # check if both options of HREF point to the same file, i.e. the same inode on the file system
         if [[ "`stat -c %d:%i "$NORM_HREF_OPTION_1"`" == "`stat -c %d:%i "$NORM_HREF_OPTION_2"`" ]]; then
             NORM_HREF="$NORM_HREF_OPTION_2";
+        else
+            NORM_HREF="$NORM_HREF_OPTION_1";
         fi;
     else
         NORM_HREF="$NORM_HREF_OPTION_1";
