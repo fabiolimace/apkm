@@ -17,6 +17,7 @@
 PROGRAM_DIR=`dirname "$0"` # The place where the bash and awk scripts are
 WORKING_DIR=`pwd -P` # The place where the markdown files are
 
+HTML_DIR="$WORKING_DIR/.apkm/html";
 META_DIR="$WORKING_DIR/.apkm/meta";
 DATABASE="$WORKING_DIR/.apkm/meta.db"
 
@@ -35,9 +36,14 @@ function validate_program_path {
             exit 1;
         fi;
     done <<EOF
-$PROGRAM_DIR/apkm-list-links.awk
-$PROGRAM_DIR/apkm-save-links.sh
+$PROGRAM_DIR/apkm-html.awk
+$PROGRAM_DIR/apkm-links.awk
+$PROGRAM_DIR/apkm-tags.awk
+$PROGRAM_DIR/apkm-httpd.sh
 $PROGRAM_DIR/apkm-save.sh
+$PROGRAM_DIR/apkm-save-html.sh
+$PROGRAM_DIR/apkm-save-links.sh
+$PROGRAM_DIR/apkm-save-meta.sh
 EOF
 
 }
@@ -124,6 +130,14 @@ function path_meta {
     local NAME=`basename "$FILE"`
     local ROAD=`dirname "$FILE" | sed 's,^/,,'`
     echo "$META_DIR/$ROAD/$NAME.$SUFF"
+}
+
+function path_html {
+    local FILE="${1}"
+    local SUFF="html"
+    local NAME=`basename "$FILE"`
+    local ROAD=`dirname "$FILE" | sed 's,^/,,'`
+    echo "$HTML_DIR/$ROAD/$NAME.$SUFF"
 }
 
 # Remove all "./" and "../" from paths,
