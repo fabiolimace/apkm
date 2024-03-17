@@ -14,7 +14,8 @@ Foi a base para a graphic novel e o filme From Hell, bem como outras dramatizaç
 
 ## Titulo 2
 
-Knight apresentou uma elaborada teoria da _conspiração_ envolvendo a família real britânica, a maçonaria e o pintor __Walter Sickert__. Ele `concluiu` que as `vítimas` foram assassinadas para encobrir um casamento secreto entre o segundo na linha de sucessão ao trono, o príncipe Alberto Vitor, Duque de Clarence e Avondale, e _Annie Elizabeth Crook_, uma garota da classe trabalhadora.
+Knight apresentou uma elaborada teoria da _conspiração_ envolvendo a família
+real britânica, a maçonaria e o pintor __Walter Sickert__. Ele `concluiu` que as `vítimas` foram assassinadas para encobrir um casamento secreto entre o segundo na linha de sucessão ao trono, o príncipe Alberto Vitor, Duque de Clarence e Avondale, e _Annie Elizabeth Crook_, uma garota da classe trabalhadora.
 
 > **NOTE**:  
 > Knight apresentou uma elaborada teoria da _conspiração_ envolvendo
@@ -62,7 +63,7 @@ Lista ordenada
 
 Foi a base para a graphic novel e o filme From Hell, bem como outras dramatizações, e influenciou escritores de ficção criminal, como Patricia Cornwell e Anne Perry. 
 
-![uma paisagem](image.png)
+![uma paisagem](https://upload.wikimedia.org/wikipedia/commons/7/70/Example.png)
 
 Foi a base para a graphic novel e o filme From Hell, bem como outras dramatizações, e influenciou escritores de ficção criminal, como Patricia Cornwell e Anne Perry. 
 

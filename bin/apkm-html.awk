@@ -48,7 +48,10 @@ function pop(    tag) {
 
 function print_buf() {
 
-    if (peek() != "pre") {
+    if (peek() == "pre") {
+        # NL after button
+        sub("\n", "", buf);
+    } else {
         buf = styles(buf);
         buf = images(buf);
         buf = links(buf);
@@ -62,18 +65,18 @@ function print_buf() {
 
 function append(    str) {
 
-
     if (str ~ /[ ][ ]+$/) {
         str = str "<br />"
     }
 
     if (buf == "") {
-        if (str ~ "^\n") {
-            str = substr(str, 2);
-        }
         buf = str;
     } else {
-        buf=buf " " str;
+        if (peek() == "pre") {
+            buf=buf "\n" str;
+        } else {
+            buf=buf " " str;
+        }
     }
 }
 
@@ -448,9 +451,9 @@ function blockquote_line(line) {
     if (peek() == "pre") {
         
         # remove leading spaces
-        sub(/^[ ]+/, "")
+        sub(/[ ]{4}/, "")
         
-        append("\n" $0)
+        append($0);
     }
     
     next;
