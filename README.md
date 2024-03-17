@@ -87,14 +87,15 @@ The links table schema:
 
 ```sql
 CREATE TABLE link_ (
-    orig_ TEXT, -- UUIDv8 of the origin file
-    dest_ TEXT, -- UUIDv8 of the destination file
-    href_ TEXT NOT NULL, -- Link destination as in the text
+    orig_ TEXT NOT NULL, -- UUIDv8 of the origin file
+    dest_ TEXT NULL, -- UUIDv8 of the destination file
+    href_ TEXT NOT NULL, -- Path relative to the origin file (as is) or URL
+    path_ TEXT NULL, -- Path relative to the base directory (normalized)
     type_ TEXT NOT NULL, -- Link type: Internal (I), External (E)
-    brok_ INTEGER DEFAULT 0, -- Broken link: unknown (0), broken (1)
+    brok_ INTEGER DEFAULT 0 NOT NULL, -- Broken link: unknown (0), broken (1)
     CHECK (type_ IN ('I', 'E')),
     CHECK (brok_ IN (0, 1)),
-    PRIMARY KEY (orig_, dest_),
+    PRIMARY KEY (orig_, href_),
     FOREIGN KEY (orig_) REFERENCES meta_ (uuid_),
     FOREIGN KEY (dest_) REFERENCES meta_ (uuid_)
 ) STRICT;
@@ -109,8 +110,8 @@ This is a list of features to be implemented:
 
 * A function to normalize relative paths.
 * A function to check wether a link is internal or external.
-    - If a link is internal, `link_.dest_` is a UUID and HREF is the relative path to a file.
-    - If a link is external, `link_.dest_` is NULL and HREF is the URL to an external resource.
+    - If a link is internal, `link_.dest_` is a UUID, HREF is relative to the file and PATH is relative to the base directory.
+    - If a link is external, `link_.dest_` is NULL and HREF is the URL to an external resource and PATH is NULL.
 * A function to check if internal links are broken, verifying whether the file pointed by the path exists.
 * A function to check if external links may be broken, verifying whether a HTTP request returns 200 (OK) or 404 (NOK).
 * A function to move a file from a path to another, while updating and normalizing links.

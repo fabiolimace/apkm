@@ -61,14 +61,15 @@ CREATE TABLE meta_ (
 ) STRICT;
 -- Create links table
 CREATE TABLE link_ (
-    orig_ TEXT, -- UUIDv8 of the origin file
-    dest_ TEXT, -- UUIDv8 of the destination file
-    href_ TEXT NOT NULL, -- Link destination as in the text
+    orig_ TEXT NOT NULL, -- UUIDv8 of the origin file
+    dest_ TEXT NULL, -- UUIDv8 of the destination file
+    href_ TEXT NOT NULL, -- Path relative to the origin file (as is) or URL
+    path_ TEXT NULL, -- Path relative to the base directory (normalized)
     type_ TEXT NOT NULL, -- Link type: Internal (I), External (E)
-    brok_ INTEGER DEFAULT 0, -- Broken link: unknown (0), broken (1)
+    brok_ INTEGER DEFAULT 0 NOT NULL, -- Broken link: unknown (0), broken (1)
     CHECK (type_ IN ('I', 'E')),
     CHECK (brok_ IN (0, 1)),
-    PRIMARY KEY (orig_, dest_),
+    PRIMARY KEY (orig_, href_),
     FOREIGN KEY (orig_) REFERENCES meta_ (uuid_),
     FOREIGN KEY (dest_) REFERENCES meta_ (uuid_)
 ) STRICT;
