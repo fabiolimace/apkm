@@ -71,7 +71,7 @@ function save_links_db {
 
 function http_status {
     local HREF="$1"
-    wget --server-response --spider --quiet "$HREF" 2>&1 | awk 'NR==1{print $2}'
+    timeout 5s wget --server-response --spider --quiet "$HREF" 2>&1 | awk 'NR==1{print $2}'
 }
 
 function normalize_href {
