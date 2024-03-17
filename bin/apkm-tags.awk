@@ -7,8 +7,8 @@
 #
 # Usage:
 #
-#     awk -f apkm-list-tags.awk FILE
-#     busybox awk -f apkm-list-tags.awk FILE
+#     awk -f apkm-tags.awk FILE
+#     busybox awk -f apkm-tags.awk FILE
 #
 # It works with gawk and Busybox.
 #

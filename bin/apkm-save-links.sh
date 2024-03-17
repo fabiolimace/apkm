@@ -15,7 +15,7 @@ function save_links_fs {
     local FILE="${1}"
     local META=`path_meta "$FILE" "link"`
     mkdir --parents "`dirname "$META"`"
-    "$PROGRAM_DIR/apkm-list-links.awk" "$FILE" > "$META"
+    "$PROGRAM_DIR/apkm-links.awk" "$FILE" > "$META"
 }
 
 function save_links_db {
@@ -102,6 +102,13 @@ function normalize_href {
 }
 
 FILE="${1}"
+
+if [[ ! -f "$FILE" ]];
+then
+    echo "File not found: '$FILE'" 1>&2
+    exit 1;
+fi;
+
 save_links_fs "$FILE"
 save_links_db "$FILE"
 

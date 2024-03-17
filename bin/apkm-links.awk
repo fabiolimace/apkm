@@ -5,8 +5,8 @@
 #
 # Usage:
 #
-#     awk -f apkm-list-links.awk FILE
-#     busybox awk -f apkm-list-links.awk FILE
+#     awk -f apkm-links.awk FILE
+#     busybox awk -f apkm-links.awk FILE
 #
 # It works with gawk and busybox.
 #

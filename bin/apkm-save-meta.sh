@@ -40,7 +40,7 @@ function save_meta_fs {
         else
             TAGS="$TAGS,$line";
         fi;
-    done < <("$PROGRAM_DIR/apkm-list-tags.awk" "$FILE");
+    done < <("$PROGRAM_DIR/apkm-tags.awk" "$FILE");
 
     cat > "$META" <<EOF
 uuid=$UUID
@@ -97,6 +97,13 @@ function save_meta_db {
 }
 
 FILE="${1}"
+
+if [[ ! -f "$FILE" ]];
+then
+    echo "File not found: '$FILE'" 1>&2
+    exit 1;
+fi;
+
 save_meta_fs "$FILE"
 save_meta_db "$FILE"
 
