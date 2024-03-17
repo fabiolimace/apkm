@@ -210,12 +210,89 @@ function apply_image(str, regex,    out, found, arr, href, label) {
 
 function print_header() {
 
-    print "<!DOCTYPE html>"
-    print "<html>"
-    print "<head>"
-    print "<title></title>"
-    print "</head>"
-    print "<body>"
+    print "<!DOCTYPE html>";
+    print "<html>";
+    print "<head>";
+    print "<title></title>";
+    print "<style>";
+
+    print ":root {\n";
+    print "  --gray: #efefef;\n";
+    print "  --black: #444;\n";
+    print "  --dark-gray: #aaaaaa;\n";
+    print "  --light-gray: #fafafa;\n";
+    print "  --light-blue: #0969da;\n";
+    print "  --light-yellow: #fafaaa;\n";
+    print "}\n";
+    print "html {\n";
+    print "  font-size: 16px;\n";
+    print "  max-width: 100%;\n";
+    print "}\n";
+    print "body {\n";
+    print "  padding: 1rem;\n";
+    print "  margin: 0 auto;\n";
+    print "  max-width: 50rem;\n";
+    print "  line-height: 1.8;\n";
+    print "  font-family: sans-serif;\n";
+    print "  color: var(--black);\n";
+    print "}\n";
+    print "p {\n";
+    print "  font-size: 1rem;\n";
+    print "  margin-bottom: 1.3rem;\n";
+    print "}\n";
+    print "a, a:visited { color: var(--black); }\n";
+    print "a:hover, a:focus, a:active { color: var(--light-blue); }\n";
+    print "h1 { font-size: 3rem; }\n";
+    print "h2 { font-size: 2.1rem; }\n";
+    print "h3 { font-size: 1.6rem; }\n";
+    print "h4 { font-size: 1.4rem; }\n";
+    print "h5 { font-size: 1.2rem; }\n";
+    print "h6{ font-size: 1rem; }\n";
+    print "h1, h2, h3 {\n";
+    print "  padding-bottom: 0.5rem;\n";
+    print "  border-bottom: 2px solid var(--gray);\n";
+    print "}\n";
+    print "h1, h2, h3, h4, h5, h6 {\n";
+    print "  line-height: 1.4;\n";
+    print "  font-weight: inherit;\n";
+    print "  margin: 1.4rem 0 .5rem;\n";
+    print "}\n";
+    print "pre {\n";
+    print "  padding: 1rem;\n";
+    print "  overflow-x:auto;\n";
+    print "  line-height: 1.5;\n";
+    print "  border-radius: .4rem;\n";
+    print "  font-family: monospace;\n";
+    print "  border: 1px solid var(--dark-gray);\n";
+    print "  background-color: var(--gray);\n";
+    print "}\n";
+    print "code {\n";
+    print "  padding: 0.3rem;\n";
+    print "  border-radius: .2rem;\n";
+    print "  font-family: monospace;\n";
+    print "  background-color: var(--gray);\n";
+    print "}\n";
+    print "mark {\n";
+    print "  padding: 0.3rem;\n";
+    print "  border-radius: .2rem;\n";
+    print "  background-color: var(--light-yellow);\n";
+    print "}\n";
+    print "blockquote {\n";
+    print "  margin: 1.5rem;\n";
+    print "  padding: 1rem;\n";
+    print "  border-radius: .4rem;\n";
+    print "  background-color: var(--light-gray);\n";
+    print "  border-left: 12px solid var(--gray);\n";
+    print "}\n";
+    print "hr { border: 2px solid var(--gray); }\n";
+    print "img { height: auto; max-width: 100%; }\n";
+    print "table { border-collapse: collapse; margin-bottom: 1.3rem; }\n";
+    print "th { padding: .7rem; border-bottom: 1px solid var(--black);}\n";
+    print "td { padding: .7rem; border-bottom: 1px solid var(--gray);}\n";
+    
+    print "</style>";
+    print "</head>";
+    print "<body>";
 }
 
 function print_footer() {
@@ -325,6 +402,10 @@ BEGIN {
     }
     
     if (peek() == "pre") {
+    
+        # remove leading spaces
+        sub(/^[ ]+/, "")
+        
         append("\n" $0)
     }
     
