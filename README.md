@@ -73,12 +73,12 @@ The metadata table schema:
 ```sql
 CREATE TABLE meta_ (
     uuid_ TEXT, -- UUIDv8 of the file path
-    path_ TEXT, -- Path relative to the base directory
-    name_ TEXT, -- File name
-    hash_ TEXT, -- File hash
-    crdt_ TEXT, -- Create date
-    updt_ TEXT, -- Update date
-    tags_ TEXT, -- Comma separated values
+    path_ TEXT NOT NULL, -- Path relative to the base directory
+    name_ TEXT NOT NULL, -- File name
+    hash_ TEXT NOT NULL, -- File hash
+    crdt_ TEXT NOT NULL, -- Create date
+    updt_ TEXT NOT NULL, -- Update date
+    tags_ TEXT NULL, -- Comma separated values
     CONSTRAINT meta_uuid_ PRIMARY KEY (uuid_)
 ) STRICT;
 ```
@@ -109,7 +109,7 @@ To Do List
 This is a list of features to be implemented:
 
 * A function to normalize relative paths.
-* A function to check wether a link is internal or external.
+* A function to check whether a link is internal or external.
     - If a link is internal, `link_.dest_` is a UUID, HREF is relative to the file and PATH is relative to the base directory.
     - If a link is external, `link_.dest_` is NULL and HREF is the URL to an external resource and PATH is NULL.
 * A function to check if internal links are broken, verifying whether the file pointed by the path exists.
