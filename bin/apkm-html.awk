@@ -438,28 +438,8 @@ function blockquote_line(line) {
     next;
 }
 
-/^[ ]{4}[ ]*/ {
 
-    if (empty()) {
-    
-        id++;
-        push("pre", "id", id);
-        
-        append("<button onclick='clipboard(" id ")' title='Copy to clipboard' style='float: right;'>📋</button>");
-    }
-    
-    if (peek() == "pre") {
-        
-        # remove leading spaces
-        sub(/[ ]{4}/, "")
-        
-        append($0);
-    }
-    
-    next;
-}
-
-/^[ ]*\*[ ]+/ {
+/^[ ]*[\*-][ ]+/ {
 
     if (peek() == "li") {
         pop();
@@ -469,7 +449,7 @@ function blockquote_line(line) {
     
         # remove leading spaces
         sub(/^[ ]+/, "")
-        # remove leading star
+        # remove leading star or dash
         $0 = substr($0, index($0, " "))
         # remove leading spaces
         sub(/^[ ]+/, "")
@@ -497,7 +477,7 @@ function blockquote_line(line) {
     next;
 }
 
-/^[ ]*[[:digit:]]+\.[ ]+/ {
+/^[ ]*[[:digit:]\x23+]+\.[ ]+/ {
 
     if (peek() == "li") {
         pop();
@@ -528,6 +508,27 @@ function blockquote_line(line) {
         
         push("ol");
         push("li");
+        
+        append($0);
+    }
+    
+    next;
+}
+
+/^[ ]{4}[ ]*/ {
+
+    if (empty()) {
+    
+        id++;
+        push("pre", "id", id);
+        
+        append("<button onclick='clipboard(" id ")' title='Copy to clipboard' style='float: right;'>📋</button>");
+    }
+    
+    if (peek() == "pre") {
+        
+        # remove leading spaces
+        sub(/[ ]{4}/, "")
         
         append($0);
     }

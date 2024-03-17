@@ -48,14 +48,32 @@ Há muitos fatos que contradizem a **teoria de Knight**, e sua principal referê
 Lista não ordenada
 
 * item 1
+    - item 1.1
+    - item 1.2
+    - item 1.3
 * item 2
+    - item 2.1
+    - item 2.2
+    - item 2.3
 * item 3
+    - item 3.1
+    - item 3.2
+    - item 3.3
 
 Lista ordenada
 
 1. item 1
+    #. item 1.1
+    #. item 1.2
+    #. item 1.3
 2. item 2
+    #. item 2.1
+    #. item 2.2
+    #. item 2.3
 3. item 3
+    #. item 3.1
+    #. item 3.2
+    #. item 3.3
 
 ---
 
