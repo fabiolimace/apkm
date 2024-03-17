@@ -74,6 +74,10 @@ function validate_program_and_working_paths {
      validate_working_path || exit 1;
 }
 
+function now {
+    date '+%F %T';
+}
+
 function file_hash {
     local FILE="${1}"
     sha1sum ${FILE} | head -c 40
