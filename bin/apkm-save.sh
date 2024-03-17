@@ -11,7 +11,7 @@
 source "`dirname "$0"`/apkm-common.sh" || exit 1;
 validate_program_and_working_paths || exit 1;
 
-FIND_REGEX=".*.\(md\)$";
+FIND_REGEX=".*.\(md\|txt\)$";
 IGNORE_REGEX="\\.\(apkm\|git\)";
 
 while read -s line; do
