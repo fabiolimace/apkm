@@ -16,8 +16,23 @@ function peek() {
     return stk[idx]
 }
 
-function push(tag) {
+function peek_attr() {
+    return stk_attr[idx]
+}
+
+function push(tag, key1, val1, key2, val2,    keyval1, keyval2) {
+
+    if (key1 != "") {
+        keyval1 = " " key1 "='" val1 "'";
+    }
+
+    if (key2 != "") {
+        keyval2 = " " key2 "='" val2 "'";
+    }
+
     stk[++idx] = tag
+    stk_attr[idx] = keyval1 keyval2
+    
     open_tag()
 }
 
@@ -25,6 +40,7 @@ function pop(    tag) {
     tag = peek();
     if (!empty()) {
         close_tag();
+        delete stk_attr[idx]
         delete stk[idx--]
     }
     return tag
@@ -54,7 +70,7 @@ function append(    str) {
 }
 
 function open_tag() {
-    printf "<%s>\n", peek();
+    printf "<%s %s>\n", peek(), peek_attr();
 }
 
 function close_tag() {
@@ -65,11 +81,11 @@ function close_tag() {
 function make_tag(tag, text, key1, val1, key2, val2,    keyval1, keyval2) {
 
         if (key1 != "") {
-            keyval1 = " " key1 "=\"" val1 "\"";
+            keyval1 = " " key1 "='" val1 "'";
         }
         
         if (key2 != "") {
-            keyval2 = " " key2 "=\"" val2 "\"";
+            keyval2 = " " key2 "='" val2 "'";
         }
         
         if (text == "") {
@@ -214,8 +230,8 @@ function print_header() {
     print "<html>";
     print "<head>";
     print "<title></title>";
+    
     print "<style>";
-
     print ":root {\n";
     print "  --gray: #efefef;\n";
     print "  --black: #444;\n";
@@ -289,8 +305,18 @@ function print_header() {
     print "table { border-collapse: collapse; margin-bottom: 1.3rem; }\n";
     print "th { padding: .7rem; border-bottom: 1px solid var(--black);}\n";
     print "td { padding: .7rem; border-bottom: 1px solid var(--gray);}\n";
-    
     print "</style>";
+    
+    print "<script>";
+    print "function clipboard(id) {";
+    print "  // Get the text field";
+    print "  var copyText = document.getElementById(id);";
+    print "  // Copy the text inside the text field, without the icon";
+    print "  var textContent = copyText.textContent.replace('📋', '')";
+    print "  navigator.clipboard.writeText(textContent);";
+    print "}";
+    print "</script>"
+    
     print "</head>";
     print "<body>";
 }
@@ -302,10 +328,13 @@ function print_footer() {
 
 BEGIN {
 
+    id=0;
+    
     buf=""
 
     idx=0
     stk[0]="root";
+    stk_attr[0]="";
     
     print_header();
 }
@@ -398,11 +427,17 @@ BEGIN {
 /^[ ]{4}[ ]*/ {
 
     if (empty()) {
-        push("pre")
+    
+        id++;
+        
+        push("pre", "id", id)
+        
+        button="<button onclick='clipboard(" id ")' title='Copy to clipboard' style='float: right;'>📋</button>";
+        append("\n" button);
     }
     
     if (peek() == "pre") {
-    
+        
         # remove leading spaces
         sub(/^[ ]+/, "")
         
