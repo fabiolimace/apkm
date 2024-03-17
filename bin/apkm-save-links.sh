@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Lists all links found in a markdown file.
+# Saves links in `meta` folder and `meta.db`.
 #
 # Usage:
 #
@@ -22,21 +22,21 @@ function save_links_db {
     local FILE="${1}"
     local META=`path_meta "$FILE" "link"`
     
+    local ORIG # UUIDv8 of the origin file
+    local DEST # UUIDv8 of the destination file
+    local HREF # Path relative to the origin file (as is) or URL
+    local ROAD # Path relative to the base directory (normalized)
+    local TYPE # Link type: Internal (I), External (E)
+    local BROK # Broken link: unknown (0), broken (1)
+    
     while read -s line; do
         
-        local ORIG # UUIDv8 of the origin file
-        local DEST # UUIDv8 of the destination file
-        local HREF # Path relative to the origin file (as is) or URL
-        local ROAD # Path relative to the base directory (normalized)
-        local TYPE # Link type: Internal (I), External (E)
-        local BROK # -- Broken link: unknown (0), broken (1)
-        
-        local HREF="$line"
-        local ORIG="`path_uuid "$FILE"`"
+        HREF="$line"
+        ORIG="`path_uuid "$FILE"`"
         
         if [[ "$HREF" =~ https?:\/\/ ]];
         then
-            STATUS="`http_status "$HREF"`"
+            local STATUS="`http_status "$HREF"`"
             if [[ "$STATUS" == "200" ]];
             then
                 BROK="0";
@@ -49,7 +49,7 @@ function save_links_db {
             fi;
             TYPE="E";
         else
-            NORM_HREF=`normalize_href "$HREF"`
+            local NORM_HREF=`normalize_href "$HREF"`
             if [[ -f "$NORM_HREF" ]];
             then
                 BROK="0";

@@ -51,12 +51,12 @@ function apkm_init_db {
 -- Create metadata table
 CREATE TABLE meta_ (
     uuid_ TEXT, -- UUIDv8 of the file path
-    path_ TEXT, -- Path relative to the base directory
-    name_ TEXT, -- File name
-    hash_ TEXT, -- File hash
-    crdt_ TEXT, -- Create date
-    updt_ TEXT, -- Update date
-    tags_ TEXT, -- Comma separated values
+    path_ TEXT NOT NULL, -- Path relative to the base directory
+    name_ TEXT NOT NULL, -- File name
+    hash_ TEXT NOT NULL, -- File hash
+    crdt_ TEXT NOT NULL, -- Create date
+    updt_ TEXT NOT NULL, -- Update date
+    tags_ TEXT NULL, -- Comma separated values
     CONSTRAINT meta_uuid_ PRIMARY KEY (uuid_)
 ) STRICT;
 -- Create links table
