@@ -61,8 +61,14 @@ function print_buf() {
 }
 
 function append(    str) {
+
+
+    if (str ~ /[ ][ ]+$/) {
+        str = str "<br />"
+    }
+
     if (buf == "") {
-        if (str ~ "\n") {
+        if (str ~ "^\n") {
             str = substr(str, 2);
         }
         buf = str;
@@ -406,15 +412,19 @@ BEGIN {
     next;
 }
 
+function blockquote_line(line) {
+        # remove leading hashe
+        sub(/^>/, "", line)
+        # remove leading spaces
+        sub(/^[ ]+/, "", line)
+        return line;
+}
+
 /^>[ ]+/ {
 
-    if (empty()) {
+    $0 = blockquote_line($0);
     
-        # remove leading hashes
-        $0 = substr($0, 2)
-        # remove leading spaces
-        sub(/^[ ]+/, "")
-        
+    if (empty()) {
         push("blockquote")
     }
     
