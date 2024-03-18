@@ -17,15 +17,50 @@ Foi a base para a graphic novel e o filme From Hell, bem como outras dramatizaç
 Knight apresentou uma elaborada teoria da _conspiração_ envolvendo a família
 real britânica, a maçonaria e o pintor __Walter Sickert__. Ele `concluiu` que as `vítimas` foram assassinadas para encobrir um casamento secreto entre o segundo na linha de sucessão ao trono, o príncipe Alberto Vitor, Duque de Clarence e Avondale, e _Annie Elizabeth Crook_, uma garota da classe trabalhadora.
 
-> **NOTE**:  
-> Knight apresentou uma elaborada teoria da _conspiração_ envolvendo
-a família real britânica, a maçonaria e o pintor __Walter Sickert__.
-> Ele `concluiu` que as `vítimas` foram assassinadas para encobrir um
-casamento secreto entre o segundo na linha de sucessão ao trono, o
-príncipe Alberto Vitor, Duque de Clarence e Avondale, e _Annie Elizabeth Crook_, uma garota da classe trabalhadora.
+> 
+> > segundo na linha de sucessão ao trono
+> > > Albert Einstein (imagem) envia à revista *Analen der Physik* o primeiro de seus revolucionários artigos sobre *Física*.
+> > > > Stephen Knight e publicado pela primeira vez em 1976
+> > > > Jack the Ripper: The **Final Solution** é um livro de não-ficção escrito
+> > > o príncipe Alberto Vitor
+> > Jack the Ripper: The **Final Solution** é um livro de não-ficção escrito
+> 
+> 
+> > segundo na linha de sucessão ao trono
+> > > Albert Einstein (imagem) envia à revista *Analen der Physik* o primeiro de seus revolucionários artigos sobre *Física*.
+> > > > Stephen Knight e publicado pela primeira vez em 1976
+> > >
+> > > > Jack the Ripper: The **Final Solution** é um livro de não-ficção escrito
+> > > o príncipe Alberto Vitor
+> > Jack the Ripper: The **Final Solution** é um livro de não-ficção escrito
+> 
+> 
+> > segundo na linha de sucessão ao trono
+> > > Albert Einstein (imagem) envia à revista *Analen der Physik* o primeiro de seus revolucionários artigos sobre *Física*.
+> > > > Stephen Knight e publicado pela primeira vez em 1976
+> > 
+> > > > Jack the Ripper: The **Final Solution** é um livro de não-ficção escrito
+> > > o príncipe Alberto Vitor
+> > Jack the Ripper: The **Final Solution** é um livro de não-ficção escrito
+> 
+> 
+> > segundo na linha de sucessão ao trono
+> > > Albert Einstein (imagem) envia à revista *Analen der Physik* o primeiro de seus revolucionários artigos sobre *Física*.
+> > > > Stephen Knight e publicado pela primeira vez em 1976
+> 
+> > > > Jack the Ripper: The **Final Solution** é um livro de não-ficção escrito
+> > > o príncipe Alberto Vitor
+> > Jack the Ripper: The **Final Solution** é um livro de não-ficção escrito
+> 
+> 
+> > segundo na linha de sucessão ao trono
+> > > Albert Einstein (imagem) envia à revista *Analen der Physik* o primeiro de seus revolucionários artigos sobre *Física*.
+> > > > Stephen Knight e publicado pela primeira vez em 1976
 
-> Albert Einstein (imagem) envia à revista *Analen der Physik*
-o primeiro de seus revolucionários artigos sobre *Física*.
+> > > > Jack the Ripper: The **Final Solution** é um livro de não-ficção escrito
+> > > o príncipe Alberto Vitor
+> > Jack the Ripper: The **Final Solution** é um livro de não-ficção escrito
+> 
 
 Quebras de linhas forçadas:
 

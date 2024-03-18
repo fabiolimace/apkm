@@ -8,6 +8,10 @@
 # See: https://www.markdownguide.org/cheat-sheet/
 #
 
+function level() {
+    return idx;
+}
+
 function empty() {
     return idx == 0
 }
@@ -81,7 +85,7 @@ function append(    str) {
 }
 
 function open_tag() {
-
+    print_buf();
     printf "<%s%s>\n", peek(), peek_attr();
 }
 
@@ -416,28 +420,49 @@ BEGIN {
 }
 
 function blockquote_line(line) {
-        # remove leading hashe
-        sub(/^>/, "", line)
-        # remove leading spaces
-        sub(/^[ ]+/, "", line)
-        return line;
+
+    # remove leading quote marks
+    while (sub(/^[ ]?>[ ]?/, "", line)) {
+        n++
+    };
+    
+    # remove leading spaces
+    sub(/^[ ]+/, "", line)
+    
+    return line;
 }
 
-/^>[ ]+/ {
-
-    $0 = blockquote_line($0);
-    
-    if (empty()) {
-        push("blockquote")
+function blockquote_next_level(line,   n) {
+    n=0
+    while (sub(/^[ ]?>[ ]?/, "", line)) {
+        n++;
     }
+    return n;
+}
+
+/^[ ]?>[ ]?/ {
+
+    lv = level()
+    nx = blockquote_next_level($0)
     
-    if (peek() == "blockquote") {
+    $0 = blockquote_line($0);
+ 
+    if (nx >= lv) {
+        n = nx - lv;
+        while (n-- > 0) {
+            push("blockquote")
+        }
+        append($0)
+    } else {
+        n = lv - nx;
+        while (n-- > 0) {
+            pop()
+        }
         append($0)
     }
     
     next;
 }
-
 
 /^[ ]*[\*-][ ]+/ {
 
@@ -537,11 +562,11 @@ function blockquote_line(line) {
 }
 
 /^.+/ {
-    if (empty()) {
+    if (peek() == "root") {
         push("p")
     }
     
-    if (!empty()) {
+    if (peek() == "p") {
         append($0)
     }
 }
