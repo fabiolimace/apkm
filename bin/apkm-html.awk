@@ -8,8 +8,8 @@
 # See: https://www.markdownguide.org/cheat-sheet/
 #
 
-function level() {
-    return idx;
+function ready() {
+    return (peek() == "root" || peek() == "blockquote")
 }
 
 function empty() {
@@ -350,16 +350,81 @@ BEGIN {
     stk[0]="root";
     stk_attr[0]="";
     
+
+    ul_prefix = "^[ ]*[-][ ]+"
+    ol_prefix = "^[ ]*[[:digit:]]+\\.[ ]+"
+    blockquote_prefix = "^[ ]?>[ ]";
+    
     print_header();
 }
 
-
-/^[ ]{,3}$/ {
-    
+function pop_all() {
     while (!empty()) {
         pop();
     }
+}
+
+function pop_many() {
+    while (!empty() && peek() != "root" && peek() != "blockquote") {
+        pop();
+    }
+}
+
+function level(tag,   i, n) {
+    n = 0;
+    for (i = idx; i > 0; i--) {
+        if (stk[i] == tag) {
+            n++;
+        }
+    }
+    return n;
+}
+
+function next_level(line, prefix,    n) {
+    n=0
+    while (sub(prefix, "", line)) {
+        n++;
+    }
+    return n;
+}
+
+function remove_prefix(line, prefix) {
+
+    # remove leading quote marks
+    while (line ~ prefix) {
+        sub(prefix, "", line);
+    };
     
+    return line;
+}
+
+/^$/ {
+    pop_all();
+    next;
+}
+
+blockquote_prefix {
+
+    lv = level("blockquote");
+    nx = next_level($0, blockquote_prefix);
+    
+    $0 = remove_prefix($0, blockquote_prefix);
+    
+    if (nx >= lv) {
+        n = nx - lv;
+        while (n-- > 0) {
+            push("blockquote")
+        }
+    } else {
+        n = lv - nx;
+        while (n-- > 0) {
+            pop()
+        }
+    }
+}
+
+/^$/ {
+    pop_many();
     next;
 }
 
@@ -381,7 +446,7 @@ BEGIN {
 /^---*[ ]*/ {
 
     # <hr>
-    if (empty()) {
+    if (ready()) {
         print make_tag("hr");
     }
 
@@ -403,7 +468,7 @@ BEGIN {
     match($0, "\x23+")
     n = RLENGTH > 6 ? 6 : RLENGTH
 
-    if (empty()) {
+    if (ready()) {
     
         # remove leading hashes
         $0 = substr($0, n + 1)
@@ -416,51 +481,6 @@ BEGIN {
     if (peek() == "h" n) {
         append($0)
     }
-    next;
-}
-
-function blockquote_line(line) {
-
-    # remove leading quote marks
-    while (sub(/^[ ]?>[ ]?/, "", line)) {
-        n++
-    };
-    
-    # remove leading spaces
-    sub(/^[ ]+/, "", line)
-    
-    return line;
-}
-
-function blockquote_next_level(line,   n) {
-    n=0
-    while (sub(/^[ ]?>[ ]?/, "", line)) {
-        n++;
-    }
-    return n;
-}
-
-/^[ ]?>[ ]?/ {
-
-    lv = level()
-    nx = blockquote_next_level($0)
-    
-    $0 = blockquote_line($0);
- 
-    if (nx >= lv) {
-        n = nx - lv;
-        while (n-- > 0) {
-            push("blockquote")
-        }
-        append($0)
-    } else {
-        n = lv - nx;
-        while (n-- > 0) {
-            pop()
-        }
-        append($0)
-    }
-    
     next;
 }
 
@@ -484,7 +504,7 @@ function blockquote_next_level(line,   n) {
         append($0);
     }
     
-    if (empty()) {
+    if (ready()) {
     
         # remove leading spaces
         sub(/^[ ]+/, "")
@@ -522,7 +542,7 @@ function blockquote_next_level(line,   n) {
         append($0);
     }
     
-    if (empty()) {
+    if (ready()) {
     
         # remove leading spaces
         sub(/^[ ]+/, "")
@@ -542,7 +562,7 @@ function blockquote_next_level(line,   n) {
 
 /^[ ]{4}[ ]*/ {
 
-    if (empty()) {
+    if (ready()) {
     
         id++;
         push("pre", "id", id);
@@ -562,7 +582,8 @@ function blockquote_next_level(line,   n) {
 }
 
 /^.+/ {
-    if (peek() == "root") {
+
+    if (ready()) {
         push("p")
     }
     
