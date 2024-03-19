@@ -573,12 +573,21 @@ $0 ~ ol_prefix {
     next;
 }
 
-/^.+/ {
+/^.+/ && peek() == "li" {
+    if (!blank() && $0 != "") {
+        push("p");
+        append($0);
+        pop();
+        next;
+    }
+    append($0);
+    next;
+}
 
-    if (ready() && peek() != "li") {
+/^.+/ {
+    if (ready()) {
         push("p");
     }
-    
     append($0);
 }
 
