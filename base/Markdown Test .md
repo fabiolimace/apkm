@@ -24,14 +24,32 @@ real britânica, a maçonaria e o pintor __Walter Sickert__. Ele `concluiu` que 
 > e o filme From Hell, bem como.
 > 
 > * item 1
+>     - item 1.1
+>     - item 1.2
+>     - item 1.3
 > * item 2
+>     - item 2.1
+>     - item 2.2
+>     - item 2.3
 > * item 3
+>     - item 3.1
+>     - item 3.2
+>     - item 3.3
 > 
 > ---
 > 
 > 1. item 1
+>     1. item 1.1
+>     1. item 1.2
+>     1. item 1.3
 > 2. item 2
+>     2. item 2.1
+>     2. item 2.2
+>     2. item 2.3
 > 3. item 3
+>     3. item 3.1
+>     3. item 3.2
+>     3. item 3.3
 > 
 > ---
 > 
@@ -76,17 +94,17 @@ Lista não ordenada
 Lista ordenada
 
 1. item 1
-    #. item 1.1
-    #. item 1.2
-    #. item 1.3
+    1. item 1.1
+    2. item 1.2
+    3. item 1.3
 2. item 2
-    #. item 2.1
-    #. item 2.2
-    #. item 2.3
+    1. item 2.1
+    2. item 2.2
+    3. item 2.3
 3. item 3
-    #. item 3.1
-    #. item 3.2
-    #. item 3.3
+    1. item 3.1
+    2. item 3.2
+    3. item 3.3
 
 ---
 

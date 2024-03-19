@@ -295,8 +295,8 @@ function print_header() {
     print "        line-height: 1.5;";
     print "        border-radius: .4rem;";
     print "        font-family: monospace;";
-    print "        border: 1px solid var(--dark-gray);";
     print "        background-color: var(--gray);";
+    print "        border: 1px solid var(--dark-gray);";
     print "    }";
     print "    code {";
     print "        padding: 0.3rem;";
@@ -314,9 +314,10 @@ function print_header() {
     print "        padding: 1rem;";
     print "        border-radius: .4rem;";
     print "        background-color: var(--light-gray);";
-    print "        border-left: 12px solid var(--gray);";
+    print "        border: 1px solid var(--dark-gray);";
+    print "        border-left: 12px solid var(--dark-gray);";
     print "    }";
-    print "    hr { border: 2px solid var(--gray); }";
+    print "    hr { border: 1px solid var(--gray); }";
     print "    img { height: auto; max-width: 100%; }";
     print "    table { border-collapse: collapse; margin-bottom: 1.3rem; }";
     print "    th { padding: .7rem; border-bottom: 1px solid var(--black);}";
@@ -349,23 +350,16 @@ BEGIN {
     idx=0
     stk[0]="root";
     stk_attr[0]="";
-    
 
-    ul_prefix = "^[ ]*[-][ ]+"
-    ol_prefix = "^[ ]*[[:digit:]]+\\.[ ]+"
+    ul_prefix = "^([ ]{4})*[ ]{0,3}[\\*-][ ]"
+    ol_prefix = "^([ ]{4})*[ ]{0,3}[[:digit:]]+\\.[ ]"
     blockquote_prefix = "^[ ]?>[ ]";
     
     print_header();
 }
 
-function pop_all() {
-    while (!empty()) {
-        pop();
-    }
-}
-
-function pop_many() {
-    while (!empty() && peek() != "root" && peek() != "blockquote") {
+function pop_until(tag) {
+    while (!empty() && peek() != tag) {
         pop();
     }
 }
@@ -373,14 +367,14 @@ function pop_many() {
 function level(tag,   i, n) {
     n = 0;
     for (i = idx; i > 0; i--) {
-        if (stk[i] == tag) {
+        if (stk[i] == tag && stk[i] != "li") {
             n++;
         }
     }
     return n;
 }
 
-function next_level(line, prefix,    n) {
+function count_prefix(line, prefix,    n) {
     n=0
     while (sub(prefix, "", line)) {
         n++;
@@ -399,34 +393,91 @@ function remove_prefix(line, prefix) {
 }
 
 /^$/ {
-    pop_all();
+    pop_until("root");
     next;
 }
 
-blockquote_prefix {
+#===========================================
+# CONTAINER ELEMENTS
+#===========================================
+
+$0 ~ blockquote_prefix {
 
     lv = level("blockquote");
-    nx = next_level($0, blockquote_prefix);
+    cp = count_prefix($0, blockquote_prefix);
     
     $0 = remove_prefix($0, blockquote_prefix);
     
-    if (nx >= lv) {
-        n = nx - lv;
+    if (cp >= lv) {
+        n = cp - lv;
         while (n-- > 0) {
             push("blockquote")
         }
     } else {
-        n = lv - nx;
+        n = lv - cp;
         while (n-- > 0) {
             pop()
         }
     }
+    
+    if ($0 ~ /^$/) {
+        pop_until("blockquote");
+    }
 }
 
-/^$/ {
-    pop_many();
+$0 ~ ul_prefix {
+
+    lv = level("ul") - 1;
+    cp = count_prefix($0, "^[ ]{4}");
+    
+    $0 = remove_prefix($0, ul_prefix);
+
+    if (cp == lv) {
+        pop();
+        push("li");
+        append($0); # append("== " $0 " --- cp= " cp " lv= " lv);
+    } else if (cp > lv) {
+        push("ul");
+        push("li");
+        append($0); # append(">> " $0 " --- cp= " cp " lv= " lv);
+    } else if (cp < lv) {
+        pop();
+        pop();
+        push("li");
+        append($0); # append("<< " $0 " --- cp= " cp " lv= " lv);
+    }
+    
     next;
 }
+
+$0 ~ ol_prefix {
+
+    lv = level("ol") - 1;
+    cp = count_prefix($0, "^[ ]{4}");
+    
+    $0 = remove_prefix($0, ol_prefix);
+
+    if (cp == lv) {
+        pop();
+        push("li");
+        append($0); # append("== " $0 " --- cp= " cp " lv= " lv);
+    } else if (cp > lv) {
+        push("ol");
+        push("li");
+        append($0); # append(">> " $0 " --- cp= " cp " lv= " lv);
+    } else if (cp < lv) {
+        pop();
+        pop();
+        push("li");
+        append($0); # append("<< " $0 " --- cp= " cp " lv= " lv);
+    }
+    
+    next;
+}
+
+#===========================================
+# SIMPLE ELEMENTS
+#===========================================
 
 /^===*[ ]*/ {
 
@@ -481,82 +532,6 @@ blockquote_prefix {
     if (peek() == "h" n) {
         append($0)
     }
-    next;
-}
-
-/^[ ]*[\*-][ ]+/ {
-
-    if (peek() == "li") {
-        pop();
-    }
-    
-    if (peek() == "ul") {
-    
-        # remove leading spaces
-        sub(/^[ ]+/, "")
-        # remove leading star or dash
-        $0 = substr($0, index($0, " "))
-        # remove leading spaces
-        sub(/^[ ]+/, "")
-        
-        push("li");
-        
-        append($0);
-    }
-    
-    if (ready()) {
-    
-        # remove leading spaces
-        sub(/^[ ]+/, "")
-        # remove leading star
-        $0 = substr($0, index($0, " "))
-        # remove leading spaces
-        sub(/^[ ]+/, "")
-        
-        push("ul");
-        push("li");
-        
-        append($0);
-    }
-    
-    next;
-}
-
-/^[ ]*[[:digit:]\x23+]+\.[ ]+/ {
-
-    if (peek() == "li") {
-        pop();
-    }
-    
-    if (peek() == "ol") {
-    
-        # remove leading spaces
-        sub(/^[ ]+/, "")
-        # remove leading star
-        $0 = substr($0, index($0, " "))
-        # remove leading spaces
-        sub(/^[ ]+/, "")
-        
-        push("li");
-        
-        append($0);
-    }
-    
-    if (ready()) {
-    
-        # remove leading spaces
-        sub(/^[ ]+/, "")
-        # remove leading star
-        $0 = substr($0, index($0, " "))
-        # remove leading spaces
-        sub(/^[ ]+/, "")
-        
-        push("ol");
-        push("li");
-        
-        append($0);
-    }
-    
     next;
 }
 
