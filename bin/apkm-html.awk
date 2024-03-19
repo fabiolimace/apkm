@@ -60,6 +60,9 @@ function unpush(    tag) {
 
 function print_buf() {
 
+    # a ordem importa
+    buf = diamonds(buf);
+    buf = elements(buf);
     buf = styles(buf);
     buf = images(buf);
     buf = links(buf);
@@ -263,6 +266,62 @@ function apply_style(str, char, len, tag,    out, found) {
     return str;
 }
 
+function elements(buf) {
+
+    regex = "\\\\<[^>]+>"
+    while (buf ~ regex) {
+        buf = apply_elements(buf, regex);
+        break;
+    }
+    
+    return buf;
+}
+
+function apply_elements(str, regex,    out, found, arr) {
+    
+    if (match(str, regex) > 0) {
+        found = substr(str, RSTART, RLENGTH);
+        
+        sub("\\\\<", "", found)
+        sub(">", "", found)
+        
+        out = out substr(str, 1, RSTART - 1);
+        out = out "&lt;" found "&gt;"
+        out = out substr(str, RSTART + RLENGTH);
+        return out;
+    }
+    
+    return buf;
+}
+
+function diamonds(buf) {
+
+    regex = "<https?[^>]+>"
+    while (buf ~ regex) {
+        buf = apply_diamonds(buf, regex);
+        break;
+    }
+    
+    return buf;
+}
+
+function apply_diamonds(str, regex,    out, found, arr) {
+    
+    if (match(str, regex) > 0) {
+        found = substr(str, RSTART, RLENGTH);
+        
+        sub("<", "", found)
+        sub(">", "", found)
+        
+        out = out substr(str, 1, RSTART - 1);
+        out = out make_tag("a", found, "href", found);
+        out = out substr(str, RSTART + RLENGTH);
+        return out;
+    }
+    
+    return buf;
+}
+
 function links(buf) {
 
     regex = "\\[[^]]+\\]\\([^)]*\\)"
@@ -280,7 +339,7 @@ function apply_link(str, regex,    out, found, arr, href, label) {
     
     if (match(str, regex) > 0) {
     
-        found = substr(str, RSTART + len,   RLENGTH - 2*len);
+        found = substr(str, RSTART,   RLENGTH);
         
         split(found, arr, "\\]\\(");
         label = substr(arr[1], 2);
@@ -313,7 +372,7 @@ function apply_image(str, regex,    out, found, arr, href, label) {
     
     if (match(str, regex) > 0) {
     
-        found = substr(str, RSTART + len,   RLENGTH - 2*len);
+        found = substr(str, RSTART,   RLENGTH);
         
         split(found, arr, "\\]\\(");
         label = substr(arr[1], 3);
@@ -342,6 +401,7 @@ function print_header() {
     print "        --black: #444;";
     print "        --dark-gray: #aaaaaa;";
     print "        --light-gray: #fafafa;";
+    print "        --dark-blue: #0000ff;";
     print "        --light-blue: #0969da;";
     print "        --light-yellow: #fafaaa;";
     print "    }";
@@ -361,8 +421,8 @@ function print_header() {
     print "        font-size: 1rem;";
     print "        margin-bottom: 1.3rem;";
     print "    }";
-    print "    a, a:visited { color: var(--black); }";
-    print "    a:hover, a:focus, a:active { color: var(--light-blue); }";
+    print "    a, a:visited { color: var(--light-blue); }";
+    print "    a:hover, a:focus, a:active { color: var(--dark-blue); }";
     print "    h1 { font-size: 2.4rem; }";
     print "    h2 { font-size: 1.8rem; }";
     print "    h3 { font-size: 1.4rem; }";
@@ -721,5 +781,6 @@ function rewind() {
 }
 
 END {
+    pop_until("root");
     print_footer();
 }
