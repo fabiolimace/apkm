@@ -89,7 +89,6 @@ function append(str, sep) {
     }
 }
 
-# TODO: instead of printing, save in buf.
 function open_tag(    tag, attr) {
 
     id++
@@ -102,8 +101,7 @@ function open_tag(    tag, attr) {
     }
     
     if (peek() == "code") {
-        printf "<%s>", "pre";
-        printf "<%s id='%s'>", "code", id;
+        printf "<%s id='%s'>", "pre", id;
         printf "%s", buttons(id);
         return;
     }
@@ -116,7 +114,6 @@ function close_tag() {
     print_buf();
     
     if (peek() == "code") {
-        printf "</%s>", "code";
         printf "</%s>", "pre";
         return;
     }
@@ -129,9 +126,11 @@ function close_tag() {
     printf "</%s>\n", peek();
 }
 
-function buttons(id) {
-#    return "<button onclick='clipboard(" id ")' title='Copy to clipboard' style='float: right;'>📋</button>";
-    return"<button onclick='wordwrap(" id ")' title='Toggle wordwrap' style='float: right; font-size: 1.3rem;'>⏎</button><button onclick='clipboard(" id ")' title='Copy to clipboard' style='float: right; font-size: 1.3rem;'>📋</button>";
+function buttons(id,    style, clipboard, wordwrap) {
+    style = "float: right; font-size: 1.3rem;"
+    clipboard = "<button onclick='wordwrap(" id ")' title='Toggle word-wrap' style='" style "'>⏎</button>"
+    wordwrap = "<button onclick='clipboard(" id ")' title='Copy to clipboard' style='" style "'>📋</button>"
+    return clipboard wordwrap;
 }
 
 function make_tag(tag, text, key1, val1, key2, val2,    keyval1, keyval2) {
