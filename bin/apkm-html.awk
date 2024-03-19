@@ -8,8 +8,12 @@
 # See: https://www.markdownguide.org/cheat-sheet/
 #
 
+function blank() {
+    return buf == "";
+}
+
 function ready() {
-    return (peek() == "root" || peek() == "blockquote")
+    return (peek() == "root" || peek() == "blockquote" || peek() == "li")
 }
 
 function empty() {
@@ -84,6 +88,7 @@ function append(    str) {
     }
 }
 
+# TODO: instead of printing, save in buf.
 function open_tag() {
     print_buf();
     printf "<%s%s>\n", peek(), peek_attr();
@@ -355,6 +360,8 @@ BEGIN {
     ol_prefix = "^([ ]{4})*[ ]{0,3}[[:digit:]]+\\.[ ]"
     blockquote_prefix = "^[ ]?>[ ]";
     
+    li_container = 0; # 0: hold string (leaf), 1: hold other elements (tree)
+    
     print_header();
 }
 
@@ -367,11 +374,15 @@ function pop_until(tag) {
 function level(tag,   i, n) {
     n = 0;
     for (i = idx; i > 0; i--) {
-        if (stk[i] == tag && stk[i] != "li") {
+        if (stk[i] == tag) {
             n++;
         }
     }
     return n;
+}
+
+function count_indent(line) {
+    return count_prefix(line, "^[ ]{4}");
 }
 
 function count_prefix(line, prefix,    n) {
@@ -380,6 +391,10 @@ function count_prefix(line, prefix,    n) {
         n++;
     }
     return n;
+}
+
+function remove_indent(line) {
+    return remove_prefix(line, "^[ ]{4}");
 }
 
 function remove_prefix(line, prefix) {
@@ -428,14 +443,15 @@ $0 ~ blockquote_prefix {
 function process_list_item(tag, prefix) {
 
     lv = level(tag) - 1;
-    cp = count_prefix($0, "^[ ]{4}");
+    cp = count_indent($0);
     
     $0 = remove_prefix($0, prefix);
+    
+    li_container = 0;
 
     if (cp == lv) {
         pop();
         push("li");
-        append($0);
     } else if (cp > lv) {
         
         # add levels
@@ -447,7 +463,6 @@ function process_list_item(tag, prefix) {
         
         push(tag);
         push("li");
-        append($0);
     } else if (cp < lv) {
     
         # rem levels
@@ -459,7 +474,6 @@ function process_list_item(tag, prefix) {
         
         pop();
         push("li");
-        append($0);
     }
 }
 
@@ -468,13 +482,51 @@ $0 ~ ul_prefix {
 }
 
 $0 ~ ol_prefix {
-    process_list_item("ol", ul_prefix);
+    process_list_item("ol", ol_prefix);
 }
 
 #===========================================
 # SIMPLE ELEMENTS
 #===========================================
 
+/^$/ {
+    next;
+}
+
+/^[ ]{4}/ && peek() == "li" {
+
+    $0 = remove_indent($0);
+
+    # if the 1st line of <li> is blank
+    # then it becomes a <li> container
+    if ($0 == "") {
+        li_container=1;
+    }
+}
+
+# FIXME: it breaks turns the <li> into a <pre>
+# - item 1
+#
+#     - item 1.1
+/^[ ]{4}/ && peek() != "li" {
+
+    if (ready()) {
+    
+        id++;
+        push("pre", "id", id);
+        
+        append("<button onclick='clipboard(" id ")' title='Copy to clipboard' style='float: right;'>📋</button>");
+    }
+    
+    if (peek() == "pre") {
+        $0 = remove_indent($0);
+        append($0);
+    }
+    
+    next;
+}
+
+# TODO: remove preceding <p> (remove it from buf)
 /^===*[ ]*/ {
 
     # <h1>
@@ -490,6 +542,7 @@ $0 ~ ol_prefix {
     next;
 }
 
+# TODO: remove preceding <p> (remove it from buf)
 /^---*[ ]*/ {
 
     # <hr>
@@ -531,36 +584,19 @@ $0 ~ ol_prefix {
     next;
 }
 
-/^[ ]{4}[ ]*/ {
-
-    if (ready()) {
-    
-        id++;
-        push("pre", "id", id);
-        
-        append("<button onclick='clipboard(" id ")' title='Copy to clipboard' style='float: right;'>📋</button>");
-    }
-    
-    if (peek() == "pre") {
-        
-        # remove leading spaces
-        sub(/[ ]{4}/, "")
-        
-        append($0);
-    }
-    
-    next;
-}
-
 /^.+/ {
 
     if (ready()) {
-        push("p")
+        if (peek() == "li") {
+            if (li_container == 1) {
+                push("p");
+            }
+        } else {
+            push("p");
+        }
     }
     
-    if (peek() == "p") {
-        append($0)
-    }
+    append($0);
 }
 
 END {

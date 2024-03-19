@@ -79,11 +79,14 @@ Há muitos fatos que contradizem a **teoria de Knight**, e sua principal referê
 Lista não ordenada
 
 * item 1
+    (continuação do texto do item)
     - item 1.1
     - item 1.2
     - item 1.3
 * item 2
-    fabio
+    
+    (criação de um parágrafo aninhado no item)
+    
     - item 2.1
     - item 2.2
     - item 2.3
