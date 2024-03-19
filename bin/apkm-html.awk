@@ -44,10 +44,14 @@ function push(tag, key1, val1, key2, val2,    keyval1, keyval2) {
     open_tag()
 }
 
-function pop(    tag) {
+function pop() {
+    close_tag();
+    return unpush();
+}
+
+function unpush(    tag) {
     tag = peek();
     if (!empty()) {
-        close_tag();
         delete stk_attr[idx]
         delete stk[idx--]
     }
@@ -493,10 +497,6 @@ $0 ~ ol_prefix {
     $0 = remove_indent($0);
 }
 
-# FIXME: it breaks turns the <li> into a <pre>
-# - item 1
-#
-#     - item 1.1
 /^[ ]{4}/ && peek() != "li" {
 
     if (ready()) {
@@ -515,14 +515,16 @@ $0 ~ ol_prefix {
     next;
 }
 
-# TODO: remove preceding <p> (remove it from buf)
 /^===*[ ]*/ {
 
     # <h1>
     if (peek() == "p") {
+    
+        # revert
         $0 = buf
         buf = ""
-        pop();
+        unpush();
+        
         push("h1");
         append($0)
         pop();
@@ -531,7 +533,6 @@ $0 ~ ol_prefix {
     next;
 }
 
-# TODO: remove preceding <p> (remove it from buf)
 /^---*[ ]*/ {
 
     # <hr>
@@ -541,9 +542,12 @@ $0 ~ ol_prefix {
 
     # <h2>
     if (peek() == "p") {
+    
+        # revert
         $0 = buf
         buf = ""
-        pop();
+        unpush();
+        
         push("h2");
         append($0)
         pop();
