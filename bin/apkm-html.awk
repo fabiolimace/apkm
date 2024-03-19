@@ -360,8 +360,6 @@ BEGIN {
     ol_prefix = "^([ ]{4})*[ ]{0,3}[[:digit:]]+\\.[ ]"
     blockquote_prefix = "^[ ]?>[ ]";
     
-    li_container = 0; # 0: hold string (leaf), 1: hold other elements (tree)
-    
     print_header();
 }
 
@@ -446,8 +444,6 @@ function process_list_item(tag, prefix) {
     cp = count_indent($0);
     
     $0 = remove_prefix($0, prefix);
-    
-    li_container = 0;
 
     if (cp == lv) {
         pop();
@@ -494,14 +490,7 @@ $0 ~ ol_prefix {
 }
 
 /^[ ]{4}/ && peek() == "li" {
-
     $0 = remove_indent($0);
-
-    # if the 1st line of <li> is blank
-    # then it becomes a <li> container
-    if ($0 == "") {
-        li_container=1;
-    }
 }
 
 # FIXME: it breaks turns the <li> into a <pre>
@@ -586,14 +575,8 @@ $0 ~ ol_prefix {
 
 /^.+/ {
 
-    if (ready()) {
-        if (peek() == "li") {
-            if (li_container == 1) {
-                push("p");
-            }
-        } else {
-            push("p");
-        }
+    if (ready() && peek() != "li") {
+        push("p");
     }
     
     append($0);
