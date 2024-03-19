@@ -185,11 +185,61 @@ function code(buf) {
     return buf;
 }
 
+function superfix(buf) {
+
+    while (buf ~ "\\^[^\\^]+\\^") {
+        buf = apply_style(buf, "\\^", 1, "sup");
+    }
+    
+    return buf;
+}
+
+function subfix(buf) {
+
+    while (buf ~ "~[^~]+~") {
+        buf = apply_style(buf, "~", 1, "sub");
+    }
+    
+    return buf;
+}
+
+function strike(buf) {
+
+    while (buf ~ "~~[^~]+~~") {
+        buf = apply_style(buf, "~~", 2, "del");
+    }
+    
+    return buf;
+}
+
+function ins(buf) {
+
+    while (buf ~ "\\+\\+[^\\+]+\\+\\+") {
+        buf = apply_style(buf, "\\+\\+", 2, "ins");
+    }
+    
+    return buf;
+}
+
+function mark(buf) {
+
+    while (buf ~ "==[^=]+==") {
+        buf = apply_style(buf, "==", 2, "mark");
+    }
+    
+    return buf;
+}
+
 function styles(buf) {
 
     buf = strong(buf);
     buf = em(buf);
     buf = code(buf);
+    buf = strike(buf);
+    buf = ins(buf);
+    buf = mark(buf);
+    buf = superfix(buf);
+    buf = subfix(buf);
     
     return buf;
 }
@@ -390,17 +440,15 @@ function print_footer() {
 
 BEGIN {
 
-    id=0;
-    
     buf=""
 
     idx=0
     stk[0]="root";
     stk_attr[0]="";
 
-    ul_prefix = "^([ ]{4})*[ ]{0,3}[\\*-][ ]"
+    blockquote_prefix = "^[ ]*>[ ]?";
+    ul_prefix = "^([ ]{4})*[ ]{0,3}[*+-][ ]"
     ol_prefix = "^([ ]{4})*[ ]{0,3}[[:digit:]]+\\.[ ]"
-    blockquote_prefix = "^[ ]?>[ ]";
     
     print_header();
 }
@@ -448,8 +496,11 @@ function remove_prefix(line, prefix) {
 }
 
 /^$/ {
-    pop_until("root");
-    next;
+
+    if (peek() != "code") {
+        pop_until("root");
+        next;
+    }
 }
 
 #===========================================
@@ -457,6 +508,10 @@ function remove_prefix(line, prefix) {
 #===========================================
 
 $0 ~ blockquote_prefix {
+
+    if (peek() == "li") {
+        $0 = remove_indent($0);
+    }
 
     lv = level("blockquote");
     cp = count_prefix($0, blockquote_prefix);
@@ -527,47 +582,52 @@ $0 ~ ol_prefix {
 # SIMPLE ELEMENTS
 #===========================================
 
+{
+    gsub("\t", "    ", $0); # replace tabas with 4 spaces
+}
+
 /^$/ {
     next;
 }
 
-/^[ ]{4}/ && peek() == "li" {
+peek() == "li" {
     $0 = remove_indent($0);
 }
 
 /^[ ]{4}/ && peek() != "code" && peek() != "li" {
 
-    if (ready()) {
+    if (peek() != "pre") {
         push("pre");
     }
-    
-    if (peek() == "pre") {
-        sub("^[ ]{4}", "", $0);
-        append($0);
-    }
-    
+
+    sub("^[ ]{4}", "", $0);
+    append($0);
     next;
 }
 
 /^```/ {
 
-    if (ready()) {
+    if (peek() != "code") {
         push("code");
+        next;
     }
     
+    pop();
     next;
 }
 
-/^===*[ ]*/ {
+function rewind() {
+    # revert
+    $0 = buf
+    buf = ""
+    unpush();
+}
+
+/^===+/ {
 
     # <h1>
     if (peek() == "p") {
-    
-        # revert
-        $0 = buf
-        buf = ""
-        unpush();
-        
+        rewind();
         push("h1");
         append($0)
         pop();
@@ -576,48 +636,70 @@ $0 ~ ol_prefix {
     next;
 }
 
-/^---*[ ]*/ {
+/^---+/ && peek() != "table" {
 
-    # <hr>
-    if (ready()) {
-        print make_tag("hr");
-    }
-
-    # <h2>
+    # <hr> or <h2>
     if (peek() == "p") {
-    
-        # revert
-        $0 = buf
-        buf = ""
-        unpush();
-        
+        rewind();
         push("h2");
         append($0)
         pop();
+    } else {
+        print make_tag("hr");
     }
     
     next;
 }
 
-/^\x23+[ ]+/ {
+/^[\x23]+[ ]+/ {
 
     match($0, "\x23+")
     n = RLENGTH > 6 ? 6 : RLENGTH
-
-    if (ready()) {
     
-        # remove leading hashes
-        $0 = substr($0, n + 1)
-        # remove leading spaces
-        sub(/^[ ]+/, "")
-        
-        push("h" n)
-    }
+    # remove leading hashes
+    $0 = substr($0, n + 1)
+    # remove leading spaces
+    sub(/^[ ]+/, "")
     
-    if (peek() == "h" n) {
-        append($0)
-    }
+    push("h" n);
+    append($0);
     next;
+}
+
+/\|[ ]?/ {
+    
+    if (peek() != "table") {
+    
+        push("table");
+        push("tr");
+        
+        n = split($0, arr, /\|/);
+        for(i = 0; i < n; i++) {
+            push("th");
+            append(arr[i]);
+            pop();
+        }
+        pop();
+        next;
+    }
+    
+    if (peek() == "table") {
+    
+        if ($0 ~ /[ ]*---/) {
+            next;
+        }
+    
+        push("tr");
+        
+        n = split($0, arr, /\|/);
+        for(i = 0; i < n; i++) {
+            push("td");
+            append(arr[i]);
+            pop();
+        }
+        pop();
+        next;
+    }
 }
 
 /^.+/ && peek() == "li" {
