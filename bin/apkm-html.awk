@@ -425,54 +425,50 @@ $0 ~ blockquote_prefix {
     }
 }
 
-$0 ~ ul_prefix {
+function process_list_item(tag, prefix) {
 
-    lv = level("ul") - 1;
+    lv = level(tag) - 1;
     cp = count_prefix($0, "^[ ]{4}");
     
-    $0 = remove_prefix($0, ul_prefix);
+    $0 = remove_prefix($0, prefix);
 
     if (cp == lv) {
         pop();
         push("li");
-        append($0); # append("== " $0 " --- cp= " cp " lv= " lv);
+        append($0);
     } else if (cp > lv) {
-        push("ul");
+        
+        # add levels
+        n = cp - lv - 1;
+        while (n-- > 0) {
+            push(tag);
+            push("li");
+        }
+        
+        push(tag);
         push("li");
-        append($0); # append(">> " $0 " --- cp= " cp " lv= " lv);
+        append($0);
     } else if (cp < lv) {
-        pop();
+    
+        # rem levels
+        n = lv - cp;
+        while (n-- > 0) {
+            pop();
+            pop();
+        }
+        
         pop();
         push("li");
-        append($0); # append("<< " $0 " --- cp= " cp " lv= " lv);
+        append($0);
     }
-    
-    next;
+}
+
+$0 ~ ul_prefix {
+    process_list_item("ul", ul_prefix);
 }
 
 $0 ~ ol_prefix {
-
-    lv = level("ol") - 1;
-    cp = count_prefix($0, "^[ ]{4}");
-    
-    $0 = remove_prefix($0, ol_prefix);
-
-    if (cp == lv) {
-        pop();
-        push("li");
-        append($0); # append("== " $0 " --- cp= " cp " lv= " lv);
-    } else if (cp > lv) {
-        push("ol");
-        push("li");
-        append($0); # append(">> " $0 " --- cp= " cp " lv= " lv);
-    } else if (cp < lv) {
-        pop();
-        pop();
-        push("li");
-        append($0); # append("<< " $0 " --- cp= " cp " lv= " lv);
-    }
-    
-    next;
+    process_list_item("ol", ul_prefix);
 }
 
 #===========================================

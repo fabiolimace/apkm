@@ -83,9 +83,28 @@ Lista não ordenada
     - item 1.2
     - item 1.3
 * item 2
+    fabio
     - item 2.1
     - item 2.2
     - item 2.3
+        - item 2.3.1
+        - item 2.3.2
+        - item 2.3.3
+            - item 2.3.3.1
+            - item 2.3.3.2
+            - item 2.3.3.3
+    - item 2.4
+    - item 2.5
+    - item 2.6
+        - item 2.6.1
+        - item 2.6.2
+        - item 2.6.3
+            - item 2.6.3.1
+            - item 2.6.3.2
+            - item 2.6.3.3
+    - item 2.7
+    - item 2.8
+    - item 2.9
 * item 3
     - item 3.1
     - item 3.2
@@ -95,16 +114,34 @@ Lista ordenada
 
 1. item 1
     1. item 1.1
-    2. item 1.2
-    3. item 1.3
-2. item 2
+    1. item 1.2
+    1. item 1.3
+1. item 2
     1. item 2.1
-    2. item 2.2
-    3. item 2.3
-3. item 3
+    1. item 2.2
+    1. item 2.3
+        1. item 2.3.1
+        1. item 2.3.2
+        1. item 2.3.3
+            1. item 2.3.3.1
+            1. item 2.3.3.2
+            1. item 2.3.3.3
+    1. item 2.4
+    1. item 2.5
+    1. item 2.6
+        1. item 2.6.1
+        1. item 2.6.2
+        1. item 2.6.3
+            1. item 2.6.3.1
+            1. item 2.6.3.2
+            1. item 2.6.3.3
+    1. item 2.7
+    1. item 2.8
+    1. item 2.9
+1. item 3
     1. item 3.1
-    2. item 3.2
-    3. item 3.3
+    1. item 3.2
+    1. item 3.3
 
 ---
 
