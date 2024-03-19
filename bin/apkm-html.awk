@@ -60,14 +60,9 @@ function unpush(    tag) {
 
 function print_buf() {
 
-    if (peek() == "pre") {
-        # NL after button
-        sub("\n", "", buf);
-    } else {
-        buf = styles(buf);
-        buf = images(buf);
-        buf = links(buf);
-    }
+    buf = styles(buf);
+    buf = images(buf);
+    buf = links(buf);
 
     if (buf != "") {
         print buf;
@@ -75,8 +70,14 @@ function print_buf() {
     buf = "";
 }
 
-function append(    str) {
+function append(str, sep) {
 
+    if (peek() == "pre" || peek() == "code") {
+        if (sep == "") sep = "\n";
+    } else {
+        if (sep == "") sep = " ";
+    }
+    
     if (str ~ /[ ][ ]+$/) {
         str = str "<br />"
     }
@@ -84,23 +85,53 @@ function append(    str) {
     if (buf == "") {
         buf = str;
     } else {
-        if (peek() == "pre") {
-            buf=buf "\n" str;
-        } else {
-            buf=buf " " str;
-        }
+        buf=buf sep str;
     }
 }
 
 # TODO: instead of printing, save in buf.
-function open_tag() {
+function open_tag(    tag, attr) {
+
+    id++
     print_buf();
+
+    if (peek() == "pre") {
+        printf "<%s id='%s'>", "pre", id;
+        printf "%s", buttons(id);
+        return;
+    }
+    
+    if (peek() == "code") {
+        printf "<%s>", "pre";
+        printf "<%s id='%s'>", "code", id;
+        printf "%s", buttons(id);
+        return;
+    }
+    
     printf "<%s%s>\n", peek(), peek_attr();
 }
 
 function close_tag() {
+
     print_buf();
-    printf "</%s>\n", peek()
+    
+    if (peek() == "code") {
+        printf "</%s>", "code";
+        printf "</%s>", "pre";
+        return;
+    }
+    
+    if (peek() == "pre") {
+        printf "</%s>", "pre";
+        return;
+    }
+    
+    printf "</%s>\n", peek();
+}
+
+function buttons(id) {
+#    return "<button onclick='clipboard(" id ")' title='Copy to clipboard' style='float: right;'>📋</button>";
+    return"<button onclick='wordwrap(" id ")' title='Toggle wordwrap' style='float: right; font-size: 1.3rem;'>⏎</button><button onclick='clipboard(" id ")' title='Copy to clipboard' style='float: right; font-size: 1.3rem;'>📋</button>";
 }
 
 function make_tag(tag, text, key1, val1, key2, val2,    keyval1, keyval2) {
@@ -283,12 +314,12 @@ function print_header() {
     print "    }";
     print "    a, a:visited { color: var(--black); }";
     print "    a:hover, a:focus, a:active { color: var(--light-blue); }";
-    print "    h1 { font-size: 3rem; }";
-    print "    h2 { font-size: 2.1rem; }";
-    print "    h3 { font-size: 1.6rem; }";
-    print "    h4 { font-size: 1.4rem; }";
+    print "    h1 { font-size: 2.4rem; }";
+    print "    h2 { font-size: 1.8rem; }";
+    print "    h3 { font-size: 1.4rem; }";
+    print "    h4 { font-size: 1.3rem; }";
     print "    h5 { font-size: 1.2rem; }";
-    print "    h6{ font-size: 1rem; }";
+    print "    h6 { font-size: 1.1rem; }";
     print "    h1, h2, h3 {";
     print "        padding-bottom: 0.5rem;";
     print "        border-bottom: 2px solid var(--gray);";
@@ -336,11 +367,19 @@ function print_header() {
     print "<script>";
     print "    function clipboard(id) {";
     print "        var copyText = document.getElementById(id);";
-    print "        var textContent = copyText.textContent.replace('📋', '')";
+    print "        var textContent = copyText.textContent.replace(/[📋⏎]/g, '')";
     print "        navigator.clipboard.writeText(textContent);";
     print "    }";
+    print "    function wordwrap(id) {";
+    print "        var wordWrap = document.getElementById(id);";
+    print "        if (wordWrap.style.whiteSpace != 'pre-wrap') {";
+    print "            wordWrap.style.whiteSpace = 'pre-wrap';";
+    print "        } else {";
+    print "            wordWrap.style.whiteSpace = 'pre';";
+    print "        }";
+    print "    }";
     print "</script>"
-    
+
     print "</head>";
     print "<body>";
 }
@@ -497,19 +536,24 @@ $0 ~ ol_prefix {
     $0 = remove_indent($0);
 }
 
-/^[ ]{4}/ && peek() != "li" {
+/^[ ]{4}/ && peek() != "code" && peek() != "li" {
 
     if (ready()) {
-    
-        id++;
-        push("pre", "id", id);
-        
-        append("<button onclick='clipboard(" id ")' title='Copy to clipboard' style='float: right;'>📋</button>");
+        push("pre");
     }
     
     if (peek() == "pre") {
-        $0 = remove_indent($0);
+        sub("^[ ]{4}", "", $0);
         append($0);
+    }
+    
+    next;
+}
+
+/^```/ {
+
+    if (ready()) {
+        push("code");
     }
     
     next;
