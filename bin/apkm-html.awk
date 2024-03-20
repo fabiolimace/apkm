@@ -786,15 +786,44 @@ function undo(    tmp) {
     next;
 }
 
-/\|[ ]?/ {
+function set_table_aligns(line,    arr, regex, found, l, r, n) {
+
+    regex = "(:--[-]+:|:--[-]+|--[-]+:)";
+
+    delete arr; # starts from 2
+    n = split(line, arr, /\|/);
+    for(i = 2; i < n; i++) {
+    
+        if (match(arr[i], regex) > 0) {
+        
+            found = substr(arr[i], RSTART, RLENGTH);
+            
+            l = substr(found, 1, 1);
+            r = substr(found, RLENGTH, 1);
+            
+            if (l == ":" && r == ":") {
+                table_aligns[i] = "center";
+            } else if (l == ":" && r == "-") {
+                table_aligns[i] = "left";
+            } else if (l == "-" && r == ":") {
+                table_aligns[i] = "right";
+            } else {
+                table_aligns[i] = "l:" l " r: " r;
+            }
+        }
+    }
+}
+
+/^[ ]*\|.*\|[ ]*/ {
     
     if (!at("table")) {
     
         push("table");
         push("tr");
         
+        delete arr; # starts from 2
         n = split($0, arr, /\|/);
-        for(i = 0; i < n; i++) {
+        for(i = 2; i < n; i++) {
             push("th");
             append(arr[i]);
             pop();
@@ -805,17 +834,25 @@ function undo(    tmp) {
     
     if (at("table")) {
     
-        if ($0 ~ /[ ]*---/) {
+        if ($0 ~ /^[ ]*\|[ ]*([:]?--[-]+[:]?)[ ]*\|[ ]*/) {
+            set_table_aligns($0);
             next;
         }
     
         push("tr");
         
+        delete arr; # starts from 2
         n = split($0, arr, /\|/);
-        for(i = 0; i < n; i++) {
-            push("td");
+        for(i = 2; i < n; i++) {
+        
+            if (table_aligns[i] != "") {
+                push("td", "style", "text-align: " table_aligns[i] ";");
+            } else {
+                push("td");
+            }
             append(arr[i]);
             pop();
+            
         }
         pop();
         next;
