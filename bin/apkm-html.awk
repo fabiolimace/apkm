@@ -64,12 +64,14 @@ function unpush(    tag) {
 
 function write() {
 
-    # the order matters
-    buf = diamonds(buf);
-    buf = elements(buf);
-    buf = images(buf);
-    buf = links(buf);
-    buf = styles(buf);
+    if (!at("pre") && !at("code")) {
+        # the order matters
+        buf = diamonds(buf);
+        buf = elements(buf);
+        buf = images(buf);
+        buf = links(buf);
+        buf = styles(buf);
+    }
 
     if (buf != "") {
         print buf;
@@ -100,12 +102,6 @@ function open_tag() {
 
     ++id;
     write();
-
-    # no need to close them
-    if (at("br") || at("hr")) {
-        printf "<%s />", peek();
-        return;
-    }
 
     if (at("pre")) {
         printf "<%s id='%s'>", "pre", id;
@@ -151,7 +147,7 @@ function buttons(id,    style, clipboard, wordwrap) {
     return clipboard wordwrap;
 }
 
-function make(tag, text, attr1, val1, attr2, val2,    pair1, pair2) {
+function make(tag, text, attr1, val1, attr2, val2, attr3, val3,    pair1, pair2, pair3) {
 
         if (attr1 != "") {
             pair1 = " " attr1 "='" val1 "'";
@@ -161,10 +157,14 @@ function make(tag, text, attr1, val1, attr2, val2,    pair1, pair2) {
             pair2 = " " attr2 "='" val2 "'";
         }
         
+        if (attr3 != "") {
+            pair3 = " " attr3 "='" val3 "'";
+        }
+        
         if (text == "") {
-            return "<" tag pair1 pair2 " />";
+            return "<" tag pair1 pair2 pair3 " />";
         } else {
-            return "<" tag pair1 pair2 " >" text "</" tag ">";
+            return "<" tag pair1 pair2 pair3 " >" text "</" tag ">";
         }
 }
 
@@ -328,7 +328,6 @@ function diamonds(buf) {
     regex = "<https?[^>]+>"
     while (buf ~ regex) {
         buf = apply_diamonds(buf, regex);
-        break;
     }
     
     return buf;
@@ -386,7 +385,7 @@ function apply_link(buf, regex,    out, found, arr, href, label) {
 
 function images(buf) {
 
-    regex = "!\\[[^]]+\\]\\([^)]*\\)"
+    regex = "!\\[[^]]+\\]\\([^)]*([ ]\"[^\"]*\")*\\)"
     while (buf ~ regex) {
         buf = apply_image(buf, regex);
     }
@@ -395,21 +394,37 @@ function images(buf) {
 }
 
 # one image at a time
-# ![a label](image.png)
-# <img src="image.png" alt="a label" />
-function apply_image(buf, regex,    out, found, arr, href, label) {
+# ![title](image.png "alt")
+# <img title="title" src="image.png" alt="alt" />
+function apply_image(buf, regex,    out, found, src, title, alt, rstart, rlength) {
     
+    title = ""
+    src = ""
+    alt = ""
+        
     if (match(buf, regex) > 0) {
     
-        found = substr(buf, RSTART,   RLENGTH);
+        found = substr(buf, RSTART, RLENGTH);
         
-        split(found, arr, "\\]\\(");
-        label = substr(arr[1], 3);
-        href = substr(arr[2], 1, length(arr[2]) - 1);
+        rstart = RSTART
+        rlength = RLENGTH
         
-        out = out substr(buf, 1, RSTART - 1);
-        out = out make("img", "", "src", href, "alt", label);
-        out = out substr(buf, RSTART + RLENGTH);
+        if (match(found, "!\\[[^]]+\\]") > 0) {
+            title = substr(found, RSTART + 2, RLENGTH - 3);
+        }
+        
+        if (match(found, "\\([^)]*([ ]\"[^\"]*\")*\\)") > 0) {
+            src = substr(found, RSTART + 1, RLENGTH - 2);
+        }
+        
+        if (match(src, "([ ]\"[^\"]*\")") > 0) {
+            alt = substr(src, RSTART + 2, RLENGTH - 3);
+            src = substr(src, 1, RSTART - 1);
+        }
+        
+        out = out substr(buf, 1, rstart - 1);
+        out = out make("img", "", "title", title, "src", src, "alt", alt);
+        out = out substr(buf, rstart + rlength);
         
         return out;
     }
@@ -767,7 +782,7 @@ function undo(    tmp) {
 /^[*_-]{3,}[ ]*$/ {
 
     # <hr>
-    print push("hr");
+    print make("hr");
     next;
 }
 
