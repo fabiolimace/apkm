@@ -5,7 +5,11 @@
 #
 # Implemented the basic syntax without nesting (list within list etc).
 #
-# See: https://www.markdownguide.org/cheat-sheet/
+# See:
+# 
+# * https://markdown-it.github.io
+# * https://www.markdownguide.org/cheat-sheet
+# * https://www.markdownguide.org/extended-syntax
 #
 
 function ready() {
@@ -71,6 +75,7 @@ function write() {
         buf = footnotes(buf);
         buf = images(buf);
         buf = links(buf);
+        buf = links2(buf);
         buf = styles(buf);
     }
 
@@ -479,6 +484,40 @@ function apply_footnote(buf, regex,    out, found) {
     return buf;
 }
 
+# TODO: harmonize variable names for reference-style links and footnotes.
+function links2(buf) {
+
+    regex = "\\[[^]]+\\]\\[[^]]+\\]"
+    while (buf ~ regex) {
+        buf = apply_link2(buf, regex);
+    }
+    
+    return buf;
+}
+
+# one link at a time
+# ^[label][id]
+# <a href="#id">label</a>
+function apply_link2(buf, regex,    out, found, arr) {
+
+    if (match(buf, regex) > 0) {
+    
+        found = substr(buf, RSTART, RLENGTH);
+        
+        split(found, arr, "\\]\\[");
+        label = substr(arr[1], 2);
+        id = substr(arr[2], 1, length(arr[2]) - 1);
+        
+        out = out substr(buf, 1, RSTART - 1);
+        out = out make("a", label, "href", "#footnote-" id);
+        out = out substr(buf, RSTART + RLENGTH);
+        
+        return out;
+    }
+    
+    return buf;
+}
+
 function print_header() {
 
     print "<!DOCTYPE html>";
@@ -584,12 +623,28 @@ function print_header() {
     print "<body>";
 }
 
-function print_footer (    i, href, note) {
+function print_footer (    i, id, href, note, title) {
 
-    print "<hr>";
     print "<footer>";
+    print "<hr>";
+    
+    if (link_count > 0) {
+        print "<h6>LINKS</h6>";
+        print "<ol>";
+        for (i = 1; i <= link_count; i++) {
+        
+            id = link_id[i];
+            href = link_href[i];
+            title = link_title[i];
+            
+            print make("li", title " <a href='" href "'>&#x1F517;</a>", "id", "link-" id);
+            
+        }
+        print "</ol>";
+    }
     
     if (footnote_count > 0) {
+        print "<h6>FOOTNOTES</h6>";
         print "<ol>";
         for (i = 1; i <= footnote_count; i++) {
         
@@ -947,6 +1002,23 @@ function set_table_aligns(line,    arr, regex, found, l, r, n) {
         footnote_count++
         footnote_href[footnote_count] = substr($0, RSTART + 2, RLENGTH - 4);
         footnote_note[footnote_count] = substr($0, RSTART + RLENGTH);
+    }
+    next;
+}
+
+/^[ ]*\[[^]]+\][:]/ {
+
+    # ^[id]: href
+    if (match($0, /\[[^]]+\][:]/) > 0) {
+        
+        link_count++
+        link_id[link_count] = substr($0, RSTART + 1, RLENGTH - 3);
+        link_href[link_count] = substr($0, RSTART + RLENGTH);
+        
+        if (match(link_href[link_count], "[ ]\"[^\"]*\"") > 0) {
+            link_title[link_count] = substr(link_href[link_count], RSTART + 2, RLENGTH - 3);
+            link_href[link_count] = substr(link_href[link_count], 1, RSTART - 1);
+        }
     }
     next;
 }
