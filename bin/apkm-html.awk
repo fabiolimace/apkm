@@ -548,10 +548,20 @@ function pop_until(tag) {
     }
 }
 
-function level(tag,   i, n) {
+function level_blockquote(   i, n) {
     n = 0;
     for (i = idx; i > 0; i--) {
-        if (stk[i] == tag) {
+        if (stk[i] == "blockquote") {
+            n++;
+        }
+    }
+    return n;
+}
+
+function level_list(   i, n) {
+    n = 0;
+    for (i = idx; i > 0; i--) {
+        if (stk[i] == "ul" || stk[i] == "ol") {
             n++;
         }
     }
@@ -602,7 +612,7 @@ $0 ~ blockquote_prefix {
         $0 = remove_indent($0);
     }
 
-    lv = level("blockquote");
+    lv = level_blockquote();
     cp = count_prefix($0, blockquote_prefix);
     
     $0 = remove_prefix($0, blockquote_prefix);
@@ -624,12 +634,23 @@ $0 ~ blockquote_prefix {
     }
 }
 
-function parse_list_item(tag, prefix) {
+function list_start(line,    n) {
+    sub("^[ ]+", "", line);
+    match(line, "^[[:digit:]]+");
+    if (RSTART == 0) {
+        return 0;
+    }
+    return substr(line, RSTART, RLENGTH);
+}
 
-    lv = level(tag) - 1;
+function parse_list_item(tag, prefix, start) {
+
+    lv = level_list() - 1;
     cp = count_indent($0);
     
     $0 = remove_prefix($0, prefix);
+    
+    start = start != "" ? start : 1;
 
     if (cp == lv) {
         pop();
@@ -643,8 +664,13 @@ function parse_list_item(tag, prefix) {
             push("li");
         }
         
-        push(tag);
+        if (tag == "ol") {
+            push(tag, "start", start);
+        } else {
+            push(tag);
+        }
         push("li");
+        
     } else if (cp < lv) {
     
         # rem levels
@@ -664,7 +690,12 @@ $0 ~ ul_prefix {
 }
 
 $0 ~ ol_prefix {
-    parse_list_item("ol", ol_prefix);
+
+    # the user specifies
+    # the starting number
+    start = list_start($0);
+
+    parse_list_item("ol", ol_prefix, start);
 }
 
 #===========================================
