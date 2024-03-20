@@ -96,14 +96,14 @@ function append(str, sep) {
     }
 }
 
-function open_tag(    tag, attr) {
+function open_tag() {
 
     ++id;
     write();
 
     # no need to close them
     if (at("br") || at("hr")) {
-        printf "<%s />", tag;
+        printf "<%s />", peek();
         return;
     }
 
@@ -764,10 +764,10 @@ function undo(    tmp) {
     next;
 }
 
-/^---+/ && !at("p") {
+/^[*_-]{3,}[ ]*$/ {
 
     # <hr>
-    print make("hr");
+    print push("hr");
     next;
 }
 
