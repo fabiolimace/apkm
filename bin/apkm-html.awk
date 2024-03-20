@@ -333,7 +333,7 @@ function apply_elements(buf, regex,    out, found, arr) {
 # <email@...>
 function diamonds(buf) {
 
-    regex = "<(http[^ ]|[^@ ]+@)[^<> ]+>"
+    regex = "<(http|ftp|[^@ ]+@)[^<> ]+>"
     while (buf ~ regex) {
         buf = apply_diamonds(buf, regex);
     }
@@ -347,12 +347,14 @@ function apply_diamonds(buf, regex,    out, found, arr) {
     
         found = substr(buf, RSTART + 1, RLENGTH - 2);
         
-        if (found ~ /https?/) {
+        if (found ~ /^(http|ftp)/) {
+            push_link(id++, found);
             out = out substr(buf, 1, RSTART - 1);
             out = out make("a", found, "href", found);
             out = out substr(buf, RSTART + RLENGTH);
             return out;
-        } else if (found ~ /@/) {
+        } else if (found ~ /^[^@ ]+@/) {
+            push_link(id++, "mailto:" found);
             out = out substr(buf, 1, RSTART - 1);
             out = out make("a", found, "href", "mailto:" found);
             out = out substr(buf, RSTART + RLENGTH);
@@ -382,9 +384,9 @@ function links(buf) {
 # one link at a time
 # [label](href "title")
 # <a href="href" title="title">lable</a>
-function apply_link(buf, regex,    out, found, href, title, label, rstart, rlength) {
+function apply_link(buf, regex,    out, found, href, title, text, rstart, rlength) {
     
-    label = ""
+    text = ""
     href = ""
     title = ""
     
@@ -396,7 +398,7 @@ function apply_link(buf, regex,    out, found, href, title, label, rstart, rleng
         rlength = RLENGTH
         
         if (match(found, "\\[[^]]+\\]") > 0) {
-            label = substr(found, RSTART + 1, RLENGTH - 2);
+            text = substr(found, RSTART + 1, RLENGTH - 2);
         }
         
         if (match(found, "\\([^)]*([ ]\"[^\"]*\")*\\)") > 0) {
@@ -409,8 +411,10 @@ function apply_link(buf, regex,    out, found, href, title, label, rstart, rleng
         }
         
         out = out substr(buf, 1, rstart - 1);
-        out = out make("a", label, "href", href, "title", title);
+        out = out make("a", text, "href", href, "title", title);
         out = out substr(buf, rstart + rlength);
+        
+        push_link(id++, href, title, text);
         
         return out;
     }
@@ -499,7 +503,7 @@ function apply_footnote(buf, regex,    out, found) {
 # TODO: harmonize variable names for reference-style links and footnotes.
 function reflinks(buf) {
 
-    regex = "\\[[^]]+\\]\\[[^]]+\\]"
+    regex = "\\[[^]]+\\][ ]?\\[[^]]+\\]"
     while (buf ~ regex) {
         buf = apply_reflink(buf, regex);
     }
@@ -516,7 +520,7 @@ function apply_reflink(buf, regex,    out, found, arr) {
     
         found = substr(buf, RSTART, RLENGTH);
         
-        split(found, arr, "\\]\\[");
+        split(found, arr, "\\][ ]?\\[");
         label = substr(arr[1], 2);
         id = substr(arr[2], 1, length(arr[2]) - 1);
         
@@ -635,7 +639,7 @@ function print_header() {
     print "<body>";
 }
 
-function print_footer (    i, id, href, note, title) {
+function print_footer (    i, ref, href, title, text) {
 
     print "<footer>";
     print "<hr>";
@@ -645,11 +649,19 @@ function print_footer (    i, id, href, note, title) {
         print "<ol>";
         for (i = 1; i <= link_count; i++) {
         
-            id = link_id[i];
+            ref = link_ref[i];
             href = link_href[i];
             title = link_title[i];
+            text = link_text[i];
             
-            print make("li", title " <a href='" href "'>&#x1F517;</a>", "id", "link-" id, "title", title);
+            if (text == "") {
+                text = title;
+            }
+            if (text == "") {
+                text = href;
+            }
+            
+            print make("li", text " <a href='" href "'>&#x1F517;</a>", "id", "link-" ref, "title", title);
             
         }
         print "</ol>";
@@ -660,10 +672,10 @@ function print_footer (    i, id, href, note, title) {
         print "<ol>";
         for (i = 1; i <= footnote_count; i++) {
         
-            href = footnote_id[i];
-            note = footnote_text[i];
+            href = footnote_ref[i];
+            text = footnote_text[i];
             
-            print make("li", note " <a href='#footnote-" href "'>&#x1F517;</a>", "id", "footnote-" href);
+            print make("li", text " <a href='#footnote-" href "'>&#x1F517;</a>", "id", "footnote-" href);
             
         }
         print "</ol>";
@@ -1006,49 +1018,61 @@ function set_table_aligns(line,    arr, regex, found, l, r, n) {
     }
 }
 
+function push_footnote(ref, text) {
+    footnote_count++
+    footnote_ref[footnote_count] = ref;
+    footnote_text[footnote_count] = styles(text);
+}
+
 /^[ ]*\[\^[^]]+\][:]/ {
 
     # ^[id]: note
     if (match($0, /\[\^[^]]+\][:]/) > 0) {
         
-        footnote_count++
-        footnote_id[footnote_count] = substr($0, RSTART + 2, RLENGTH - 4);
-        footnote_text[footnote_count] = substr($0, RSTART + RLENGTH);
+        ref = substr($0, RSTART + 2, RLENGTH - 4);
+        text = substr($0, RSTART + RLENGTH);
+        
+        push_footnote(ref, text);
     }
     next;
 }
 
+function push_link(ref, href, title, text) {
+    link_count++;
+    link_ref[link_count] = ref;
+    link_href[link_count] = href;
+    link_title[link_count] = title;
+    link_text[link_count] = text;
+}
+
 /^[ ]*\[[^]]+\][:]/ {
 
-    # ^[id]: href
-    # ^[id]: href "title"
-    # ^[id]: href 'title'
-    # ^[id]: href (title)
-    # ^[id]: <href> "title"
-    # ^[id]: <href> 'title'
-    # ^[id]: <href> ("title")
+    # ^[ref]: href
+    # ^[ref]: href "title"
+    # ^[ref]: href 'title'
+    # ^[ref]: href (title)
+    # ^[ref]: <href> "title"
+    # ^[ref]: <href> 'title'
+    # ^[ref]: <href> ("title")
     if (match($0, /\[[^]]+\][:]/) > 0) {
         
-        link_count++
-        link_id[link_count] = substr($0, RSTART + 1, RLENGTH - 3);
-        link_href[link_count] = substr($0, RSTART + RLENGTH);
+        ref = substr($0, RSTART + 1, RLENGTH - 3);
+        href = substr($0, RSTART + RLENGTH);
         
-        if (match(link_href[link_count], "[ ](\"[^\"]*\"|'[^']*'|\\([^\\)]*\\))") > 0) {
-            link_title[link_count] = substr(link_href[link_count], RSTART + 2, RLENGTH - 3);
-            link_href[link_count] = substr(link_href[link_count], 1, RSTART - 1)
+        if (match(href, "[ ](\"[^\"]*\"|'[^']*'|\\([^\\)]*\\))") > 0) {
+            title = substr(href, RSTART + 2, RLENGTH - 3);
+            href = substr(href, 1, RSTART - 1)
             
             # remove '<' '>'.
-            if (match(link_href[link_count], "<[^>]+>") > 0) {
-                link_href[link_count] = substr(link_href[link_count], RSTART + 1, RLENGTH - 2);
+            if (match(href, "<[^>]+>") > 0) {
+                href = substr(href, RSTART + 1, RLENGTH - 2);
             }
         }
         
         # remove leading spaces
-        sub("^[ ]*", "", link_href[link_count]);
-            
-        if (link_title[link_count] == "") {
-            link_title[link_count] = "&lt;" link_href[link_count] "&gt;";
-        }
+        sub("^[ ]*", "", href);
+        
+        push_link(ref, href, title, title);
     }
     next;
 }
