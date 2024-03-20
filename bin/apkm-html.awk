@@ -8,40 +8,44 @@
 # See: https://www.markdownguide.org/cheat-sheet/
 #
 
-function blank() {
-    return buf == "";
+function ready() {
+    return at("root") || at("blockquote") || at("li");
 }
 
-function ready() {
-    return (peek() == "root" || peek() == "blockquote" || peek() == "li")
+function blank() {
+    return buf == "";
 }
 
 function empty() {
     return idx == 0
 }
 
+function at(tag) {
+    return peek() == tag ? 1 : 0;
+}
+
 function peek() {
-    return stk[idx]
+    return stk[idx];
 }
 
 function peek_attr() {
-    return stk_attr[idx]
+    return stk_attr[idx];
 }
 
-function push(tag, key1, val1, key2, val2,    keyval1, keyval2) {
+function push(tag, attr1, val1, attr2, val2,    pair1, pair2) {
 
-    if (key1 != "") {
-        keyval1 = " " key1 "='" val1 "'";
+    if (attr1 != "") {
+        pair1 = " " attr1 "='" val1 "'";
     }
 
-    if (key2 != "") {
-        keyval2 = " " key2 "='" val2 "'";
+    if (attr2 != "") {
+        pair2 = " " attr2 "='" val2 "'";
     }
 
-    stk[++idx] = tag
-    stk_attr[idx] = keyval1 keyval2
+    stk[++idx] = tag;
+    stk_attr[idx] = pair1 pair2;
     
-    open_tag()
+    open_tag();
 }
 
 function pop() {
@@ -52,20 +56,20 @@ function pop() {
 function unpush(    tag) {
     tag = peek();
     if (!empty()) {
-        delete stk_attr[idx]
-        delete stk[idx--]
+        delete stk_attr[idx];
+        delete stk[idx--];
     }
-    return tag
+    return tag;
 }
 
-function print_buf() {
+function write() {
 
-    # a ordem importa
+    # the order matters
     buf = diamonds(buf);
     buf = elements(buf);
-    buf = styles(buf);
     buf = images(buf);
     buf = links(buf);
+    buf = styles(buf);
 
     if (buf != "") {
         print buf;
@@ -75,7 +79,7 @@ function print_buf() {
 
 function append(str, sep) {
 
-    if (peek() == "pre" || peek() == "code") {
+    if (at("pre") || at("code")) {
         if (sep == "") sep = "\n";
     } else {
         if (sep == "") sep = " ";
@@ -94,34 +98,45 @@ function append(str, sep) {
 
 function open_tag(    tag, attr) {
 
-    id++
-    print_buf();
+    ++id;
+    write();
 
-    if (peek() == "pre") {
+    # no need to close them
+    if (at("br") || at("hr")) {
+        printf "<%s />", tag;
+        return;
+    }
+
+    if (at("pre")) {
         printf "<%s id='%s'>", "pre", id;
         printf "%s", buttons(id);
         return;
     }
     
-    if (peek() == "code") {
+    if (at("code")) {
         printf "<%s id='%s'>", "pre", id;
         printf "%s", buttons(id);
         return;
     }
     
-    printf "<%s%s>\n", peek(), peek_attr();
+    if (at("h1") || at("h2") || at("h3")) {
+        printf "<%s id='%s' %s>\n", peek(), id, peek_attr();
+        return;
+    }
+    
+    printf "<%s %s>\n", peek(), peek_attr();
 }
 
 function close_tag() {
 
-    print_buf();
+    write();
     
-    if (peek() == "code") {
+    if (at("code")) {
         printf "</%s>", "pre";
         return;
     }
     
-    if (peek() == "pre") {
+    if (at("pre")) {
         printf "</%s>", "pre";
         return;
     }
@@ -130,30 +145,30 @@ function close_tag() {
 }
 
 function buttons(id,    style, clipboard, wordwrap) {
-    style = "float: right; font-size: 1.3rem;"
-    clipboard = "<button onclick='wordwrap(" id ")' title='Toggle word-wrap' style='" style "'>⏎</button>"
-    wordwrap = "<button onclick='clipboard(" id ")' title='Copy to clipboard' style='" style "'>📋</button>"
+    style = "float: right; font-size: 1.3rem;";
+    clipboard = "<button onclick='wordwrap(" id ")' title='Toggle word-wrap' style='" style "'>⏎</button>";
+    wordwrap = "<button onclick='clipboard(" id ")' title='Copy to clipboard' style='" style "'>📋</button>";
     return clipboard wordwrap;
 }
 
-function make_tag(tag, text, key1, val1, key2, val2,    keyval1, keyval2) {
+function make(tag, text, attr1, val1, attr2, val2,    pair1, pair2) {
 
-        if (key1 != "") {
-            keyval1 = " " key1 "='" val1 "'";
+        if (attr1 != "") {
+            pair1 = " " attr1 "='" val1 "'";
         }
         
-        if (key2 != "") {
-            keyval2 = " " key2 "='" val2 "'";
+        if (attr2 != "") {
+            pair2 = " " attr2 "='" val2 "'";
         }
         
         if (text == "") {
-            return "<" tag keyval1 keyval2 " />";
+            return "<" tag pair1 pair2 " />";
         } else {
-            return "<" tag keyval1 keyval2 " >" text "</" tag ">";
+            return "<" tag pair1 pair2 " >" text "</" tag ">";
         }
 }
 
-function em(buf) {
+function emphasis(buf) {
 
     while (buf ~ "_[^_]+_") {
         buf = apply_style(buf, "_", 1, "em");
@@ -179,7 +194,7 @@ function strong(buf) {
     return buf;
 }
 
-function code(buf) {
+function snippet(buf) {
 
     while (buf ~ "`[^`]+`") {
         buf = apply_style(buf, "`", 1, "code");
@@ -188,7 +203,7 @@ function code(buf) {
     return buf;
 }
 
-function superfix(buf) {
+function superscript(buf) {
 
     while (buf ~ "\\^[^\\^]+\\^") {
         buf = apply_style(buf, "\\^", 1, "sup");
@@ -197,7 +212,7 @@ function superfix(buf) {
     return buf;
 }
 
-function subfix(buf) {
+function subscript(buf) {
 
     while (buf ~ "~[^~]+~") {
         buf = apply_style(buf, "~", 1, "sub");
@@ -206,7 +221,7 @@ function subfix(buf) {
     return buf;
 }
 
-function strike(buf) {
+function deleted(buf) {
 
     while (buf ~ "~~[^~]+~~") {
         buf = apply_style(buf, "~~", 2, "del");
@@ -215,7 +230,7 @@ function strike(buf) {
     return buf;
 }
 
-function ins(buf) {
+function inserted(buf) {
 
     while (buf ~ "\\+\\+[^\\+]+\\+\\+") {
         buf = apply_style(buf, "\\+\\+", 2, "ins");
@@ -224,7 +239,7 @@ function ins(buf) {
     return buf;
 }
 
-function mark(buf) {
+function highlighted(buf) {
 
     while (buf ~ "==[^=]+==") {
         buf = apply_style(buf, "==", 2, "mark");
@@ -233,37 +248,51 @@ function mark(buf) {
     return buf;
 }
 
+function formula(buf) {
+
+    while (buf ~ "\\$\\$[^\\$]+\\$\\$") {
+        buf = apply_style(buf, "\\$\\$", 2, "code");
+    }
+    
+    while (buf ~ "\\$[^\\$]+\\$") {
+        buf = apply_style(buf, "\\$", 1, "code");
+    }
+    
+    return buf;
+}
+
 function styles(buf) {
 
     buf = strong(buf);
-    buf = em(buf);
-    buf = code(buf);
-    buf = strike(buf);
-    buf = ins(buf);
-    buf = mark(buf);
-    buf = superfix(buf);
-    buf = subfix(buf);
+    buf = emphasis(buf);
+    buf = snippet(buf);
+    buf = deleted(buf);
+    buf = inserted(buf);
+    buf = highlighted(buf);
+    buf = superscript(buf);
+    buf = subscript(buf);
+    buf = formula(buf);
     
     return buf;
 }
 
 # one style at a time
-function apply_style(str, char, len, tag,    out, found) {
+function apply_style(buf, mark, len, tag,    out, found) {
+
+    regex = mark "[^" mark "]+" mark
     
-    regex = char "[^" char "]+" char
+    if (match(buf, regex) > 0) {
     
-    if (match(str, regex) > 0) {
-    
-        found = substr(str, RSTART + len,   RLENGTH - 2*len);
+        found = substr(buf, RSTART + len, RLENGTH - 2*len);
         
-        out = out substr(str, 1, RSTART - 1);
-        out = out make_tag(tag, found);
-        out = out substr(str, RSTART + RLENGTH);
+        out = out substr(buf, 1, RSTART - 1);
+        out = out make(tag, found);
+        out = out substr(buf, RSTART + RLENGTH);
         
         return out;
     }
     
-    return str;
+    return buf;
 }
 
 function elements(buf) {
@@ -277,17 +306,17 @@ function elements(buf) {
     return buf;
 }
 
-function apply_elements(str, regex,    out, found, arr) {
+function apply_elements(buf, regex,    out, found, arr) {
     
-    if (match(str, regex) > 0) {
-        found = substr(str, RSTART, RLENGTH);
+    if (match(buf, regex) > 0) {
+        found = substr(buf, RSTART, RLENGTH);
         
         sub("\\\\<", "", found)
         sub(">", "", found)
         
-        out = out substr(str, 1, RSTART - 1);
+        out = out substr(buf, 1, RSTART - 1);
         out = out "&lt;" found "&gt;"
-        out = out substr(str, RSTART + RLENGTH);
+        out = out substr(buf, RSTART + RLENGTH);
         return out;
     }
     
@@ -305,17 +334,17 @@ function diamonds(buf) {
     return buf;
 }
 
-function apply_diamonds(str, regex,    out, found, arr) {
+function apply_diamonds(buf, regex,    out, found, arr) {
     
-    if (match(str, regex) > 0) {
-        found = substr(str, RSTART, RLENGTH);
+    if (match(buf, regex) > 0) {
+        found = substr(buf, RSTART, RLENGTH);
         
         sub("<", "", found)
         sub(">", "", found)
         
-        out = out substr(str, 1, RSTART - 1);
-        out = out make_tag("a", found, "href", found);
-        out = out substr(str, RSTART + RLENGTH);
+        out = out substr(buf, 1, RSTART - 1);
+        out = out make("a", found, "href", found);
+        out = out substr(buf, RSTART + RLENGTH);
         return out;
     }
     
@@ -335,24 +364,24 @@ function links(buf) {
 # one link at a time
 # ![label](http://example.com)
 # <a href="http://example.com">label</a>
-function apply_link(str, regex,    out, found, arr, href, label) {
+function apply_link(buf, regex,    out, found, arr, href, label) {
     
-    if (match(str, regex) > 0) {
+    if (match(buf, regex) > 0) {
     
-        found = substr(str, RSTART,   RLENGTH);
+        found = substr(buf, RSTART,   RLENGTH);
         
         split(found, arr, "\\]\\(");
         label = substr(arr[1], 2);
         href = substr(arr[2], 1, length(arr[2]) - 1);
         
-        out = out substr(str, 1, RSTART - 1);
-        out = out make_tag("a", label, "href", href);
-        out = out substr(str, RSTART + RLENGTH);
+        out = out substr(buf, 1, RSTART - 1);
+        out = out make("a", label, "href", href);
+        out = out substr(buf, RSTART + RLENGTH);
         
         return out;
     }
     
-    return str;
+    return buf;
 }
 
 function images(buf) {
@@ -368,24 +397,24 @@ function images(buf) {
 # one image at a time
 # ![a label](image.png)
 # <img src="image.png" alt="a label" />
-function apply_image(str, regex,    out, found, arr, href, label) {
+function apply_image(buf, regex,    out, found, arr, href, label) {
     
-    if (match(str, regex) > 0) {
+    if (match(buf, regex) > 0) {
     
-        found = substr(str, RSTART,   RLENGTH);
+        found = substr(buf, RSTART,   RLENGTH);
         
         split(found, arr, "\\]\\(");
         label = substr(arr[1], 3);
         href = substr(arr[2], 1, length(arr[2]) - 1);
         
-        out = out substr(str, 1, RSTART - 1);
-        out = out make_tag("img", "", "src", href, "alt", label);
-        out = out substr(str, RSTART + RLENGTH);
+        out = out substr(buf, 1, RSTART - 1);
+        out = out make("img", "", "src", href, "alt", label);
+        out = out substr(buf, RSTART + RLENGTH);
         
         return out;
     }
     
-    return str;
+    return buf;
 }
 
 function print_header() {
@@ -514,7 +543,7 @@ BEGIN {
 }
 
 function pop_until(tag) {
-    while (!empty() && peek() != tag) {
+    while (!empty() && !at(tag)) {
         pop();
     }
 }
@@ -557,7 +586,7 @@ function remove_prefix(line, prefix) {
 
 /^$/ {
 
-    if (peek() != "code") {
+    if (!at("code")) {
         pop_until("root");
         next;
     }
@@ -569,7 +598,7 @@ function remove_prefix(line, prefix) {
 
 $0 ~ blockquote_prefix {
 
-    if (peek() == "li") {
+    if (at("li")) {
         $0 = remove_indent($0);
     }
 
@@ -595,7 +624,7 @@ $0 ~ blockquote_prefix {
     }
 }
 
-function process_list_item(tag, prefix) {
+function parse_list_item(tag, prefix) {
 
     lv = level(tag) - 1;
     cp = count_indent($0);
@@ -631,11 +660,11 @@ function process_list_item(tag, prefix) {
 }
 
 $0 ~ ul_prefix {
-    process_list_item("ul", ul_prefix);
+    parse_list_item("ul", ul_prefix);
 }
 
 $0 ~ ol_prefix {
-    process_list_item("ol", ol_prefix);
+    parse_list_item("ol", ol_prefix);
 }
 
 #===========================================
@@ -650,13 +679,13 @@ $0 ~ ol_prefix {
     next;
 }
 
-peek() == "li" {
+at("li") {
     $0 = remove_indent($0);
 }
 
-/^[ ]{4}/ && peek() != "code" && peek() != "li" {
+/^[ ]{4}/ && !at("code") && !at("li") {
 
-    if (peek() != "pre") {
+    if (!at("pre")) {
         push("pre");
     }
 
@@ -667,7 +696,7 @@ peek() == "li" {
 
 /^```/ {
 
-    if (peek() != "code") {
+    if (!at("code")) {
         push("code");
         next;
     }
@@ -676,38 +705,38 @@ peek() == "li" {
     next;
 }
 
-function rewind() {
-    # revert
-    $0 = buf
-    buf = ""
+# undo last push
+function undo(    tmp) {
+    tmp = buf;
+    buf = "";
     unpush();
+    return tmp;
 }
 
-/^===+/ {
+/^===+/ && at("p") {
 
     # <h1>
-    if (peek() == "p") {
-        rewind();
-        push("h1");
-        append($0)
-        pop();
-    }
-    
+    $0 = undo();
+    push("h1");
+    append($0);
+    pop();
     next;
 }
 
-/^---+/ && peek() != "table" {
+/^---+/ && at("p") {
 
-    # <hr> or <h2>
-    if (peek() == "p") {
-        rewind();
-        push("h2");
-        append($0)
-        pop();
-    } else {
-        print make_tag("hr");
-    }
-    
+    # <h2>
+    $0 = undo();
+    push("h2");
+    append($0);
+    pop();
+    next;
+}
+
+/^---+/ && !at("p") {
+
+    # <hr>
+    print make("hr");
     next;
 }
 
@@ -728,7 +757,7 @@ function rewind() {
 
 /\|[ ]?/ {
     
-    if (peek() != "table") {
+    if (!at("table")) {
     
         push("table");
         push("tr");
@@ -743,7 +772,7 @@ function rewind() {
         next;
     }
     
-    if (peek() == "table") {
+    if (at("table")) {
     
         if ($0 ~ /[ ]*---/) {
             next;
@@ -762,7 +791,7 @@ function rewind() {
     }
 }
 
-/^.+/ && peek() == "li" {
+/^.+/ && at("li") {
     if (!blank() && $0 != "") {
         push("p");
         append($0);
