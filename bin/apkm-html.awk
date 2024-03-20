@@ -68,6 +68,7 @@ function write() {
         # the order matters
         buf = diamonds(buf);
         buf = elements(buf);
+        buf = footnotes(buf);
         buf = images(buf);
         buf = links(buf);
         buf = styles(buf);
@@ -449,6 +450,35 @@ function apply_image(buf, regex,    out, found, src, title, alt, rstart, rlength
     return buf;
 }
 
+function footnotes(buf) {
+
+    regex = "\\[\\^[^]]+\\]"
+    while (buf ~ regex) {
+        buf = apply_footnote(buf, regex);
+    }
+    
+    return buf;
+}
+
+# one footnote at a time
+# ^[href]
+# <a href="#href"><sup>[href]<sup></a>
+function apply_footnote(buf, regex,    out, found) {
+
+    if (match(buf, regex) > 0) {
+    
+        found = substr(buf, RSTART + 2, RLENGTH - 3);
+        
+        out = out substr(buf, 1, RSTART - 1);
+        out = out make("a", "<sup>[" found "]<sup>", "href", "#footnote-" found);
+        out = out substr(buf, RSTART + RLENGTH);
+        
+        return out;
+    }
+    
+    return buf;
+}
+
 function print_header() {
 
     print "<!DOCTYPE html>";
@@ -554,9 +584,27 @@ function print_header() {
     print "<body>";
 }
 
-function print_footer() {
-    print "</body>"
-    print "</html>"
+function print_footer (    i, href, note) {
+
+    print "<hr>";
+    print "<footer>";
+    
+    if (footnote_count > 0) {
+        print "<ol>";
+        for (i = 1; i <= footnote_count; i++) {
+        
+            href = footnote_href[i];
+            note = footnote_note[i];
+            
+            print make("li", note " <a href='#footnote-" href "'>&#x1F517;</a>", "id", "footnote-" href);
+            
+        }
+        print "</ol>";
+    }
+    
+    print "</footer>";
+    print "</body>";
+    print "</html>";
 }
 
 BEGIN {
@@ -889,6 +937,18 @@ function set_table_aligns(line,    arr, regex, found, l, r, n) {
         pop();
         next;
     }
+}
+
+/^[ ]*\[\^[^]]+\][:]/ {
+
+    # ^[href]: note
+    if (match($0, /\[\^[^]]+\][:]/) > 0) {
+        
+        footnote_count++
+        footnote_href[footnote_count] = substr($0, RSTART + 2, RLENGTH - 4);
+        footnote_note[footnote_count] = substr($0, RSTART + RLENGTH);
+    }
+    next;
 }
 
 /^.+/ && at("li") {
