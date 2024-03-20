@@ -352,7 +352,8 @@ function apply_diamonds(buf, regex,    out, found, arr) {
 
 function links(buf) {
 
-    regex = "\\[[^]]+\\]\\([^)]*\\)"
+    # the only differende of [img] is the leading "!"
+    regex = "\\[[^]]+\\]\\([^)]*([ ]\"[^\"]*\")*\\)"
     while (buf ~ regex) {
         buf = apply_link(buf, regex);
     }
@@ -361,21 +362,37 @@ function links(buf) {
 }
 
 # one link at a time
-# ![label](http://example.com)
-# <a href="http://example.com">label</a>
-function apply_link(buf, regex,    out, found, arr, href, label) {
+# [label](href "title")
+# <a href="href" title="title">lable</a>
+function apply_link(buf, regex,    out, found, href, title, label, rstart, rlength) {
+    
+    label = ""
+    href = ""
+    title = ""
     
     if (match(buf, regex) > 0) {
     
-        found = substr(buf, RSTART,   RLENGTH);
+        found = substr(buf, RSTART, RLENGTH);
         
-        split(found, arr, "\\]\\(");
-        label = substr(arr[1], 2);
-        href = substr(arr[2], 1, length(arr[2]) - 1);
+        rstart = RSTART
+        rlength = RLENGTH
         
-        out = out substr(buf, 1, RSTART - 1);
-        out = out make("a", label, "href", href);
-        out = out substr(buf, RSTART + RLENGTH);
+        if (match(found, "\\[[^]]+\\]") > 0) {
+            label = substr(found, RSTART + 1, RLENGTH - 2);
+        }
+        
+        if (match(found, "\\([^)]*([ ]\"[^\"]*\")*\\)") > 0) {
+            href = substr(found, RSTART + 1, RLENGTH - 2);
+        }
+        
+        if (match(href, "([ ]\"[^\"]*\")") > 0) {
+            title = substr(href, RSTART + 2, RLENGTH - 3);
+            href = substr(href, 1, RSTART - 1);
+        }
+        
+        out = out substr(buf, 1, rstart - 1);
+        out = out make("a", label, "href", href, "title", title);
+        out = out substr(buf, rstart + rlength);
         
         return out;
     }
@@ -394,13 +411,13 @@ function images(buf) {
 }
 
 # one image at a time
-# ![title](image.png "alt")
-# <img title="title" src="image.png" alt="alt" />
+# ![alt](src "title")
+# <img alt="alt" src="src" title="title" />
 function apply_image(buf, regex,    out, found, src, title, alt, rstart, rlength) {
     
-    title = ""
-    src = ""
     alt = ""
+    src = ""
+    title = ""
         
     if (match(buf, regex) > 0) {
     
@@ -409,8 +426,8 @@ function apply_image(buf, regex,    out, found, src, title, alt, rstart, rlength
         rstart = RSTART
         rlength = RLENGTH
         
-        if (match(found, "!\\[[^]]+\\]") > 0) {
-            title = substr(found, RSTART + 2, RLENGTH - 3);
+        if (match(found, "\\[[^]]+\\]") > 0) {
+            alt = substr(found, RSTART + 1, RLENGTH - 2);
         }
         
         if (match(found, "\\([^)]*([ ]\"[^\"]*\")*\\)") > 0) {
@@ -418,12 +435,12 @@ function apply_image(buf, regex,    out, found, src, title, alt, rstart, rlength
         }
         
         if (match(src, "([ ]\"[^\"]*\")") > 0) {
-            alt = substr(src, RSTART + 2, RLENGTH - 3);
+            title = substr(src, RSTART + 2, RLENGTH - 3);
             src = substr(src, 1, RSTART - 1);
         }
         
         out = out substr(buf, 1, rstart - 1);
-        out = out make("img", "", "title", title, "src", src, "alt", alt);
+        out = out make("img", "", "alt", alt, "src", src, "title", title);
         out = out substr(buf, rstart + rlength);
         
         return out;
