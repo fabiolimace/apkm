@@ -12,6 +12,7 @@
 # * https://www.javatpoint.com/markdown
 # * https://www.markdownguide.org/cheat-sheet
 # * https://www.markdownguide.org/extended-syntax
+# * https://pandoc.org/MANUAL.html#pandocs-markdown
 # * https://www.dotcms.com/docs/latest/markdown-syntax
 # * https://www.codecademy.com/resources/docs/markdown
 # * https://daringfireball.net/projects/markdown/syntax
@@ -107,10 +108,10 @@ function append(str, sep) {
         if (sep == "") sep = "\n";
     } else {
         if (sep == "") sep = " ";
-    }
-    
-    if (str ~ /[ ][ ]+$/) {
-        str = str "<br />"
+        
+        if (str ~ /^[^ ]+[ ][ ]+$/) {
+            str = str "<br />"
+        }
     }
 
     if (buf == "") {
@@ -125,15 +126,8 @@ function open_tag() {
     ++id;
     write();
 
-    if (at("pre")) {
-        printf "<%s id='%s'>", "pre", id;
-        printf "%s", buttons(id);
-        return;
-    }
-    
-    if (at("code")) {
-        printf "<%s id='%s'>", "pre", id;
-        printf "%s", buttons(id);
+    if (at("pre") || at("code")) {
+        open_pre();
         return;
     }
     
@@ -149,24 +143,35 @@ function close_tag() {
 
     write();
     
-    if (at("code")) {
-        printf "</%s>", "pre";
-        return;
-    }
-    
-    if (at("pre")) {
-        printf "</%s>", "pre";
+    if (at("pre") || at("code")) {
+        close_pre();
         return;
     }
     
     printf "</%s>\n", peek();
 }
 
+function open_pre() {
+    printf "<pre>";
+    printf "<div class='pre-head'>";
+    printf "<span><span>";
+    printf "%s", buttons(id);
+    printf "</div>";
+    printf "<div class='pre-body' id='%s'>", id;
+    return;
+}
+
+function close_pre() {
+    printf "</div>";
+    printf "</pre>";
+    return;
+}
+
 function buttons(id,    style, clipboard, wordwrap) {
-    style = "float: right; font-size: 1.3rem;";
-    clipboard = "<button onclick='wordwrap(" id ")' title='Toggle word-wrap' style='" style "'>⏎</button>";
-    wordwrap = "<button onclick='clipboard(" id ")' title='Copy to clipboard' style='" style "'>📋</button>";
-    return clipboard wordwrap;
+    collapse = "<button onclick='collapse(" id ")' title='Toggle collapse' class='pre-button'>↕</button>";
+    clipboard = "<button onclick='wordwrap(" id ")' title='Toggle word-wrap' class='pre-button'>⏎</button>";
+    wordwrap = "<button onclick='clipboard(" id ")' title='Copy to clipboard' class='pre-button'>📋</button>";
+    return clipboard collapse wordwrap;
 }
 
 function make(tag, text, attr1, val1, attr2, val2, attr3, val3,    pair1, pair2, pair3) {
@@ -599,13 +604,26 @@ function print_header() {
     print "        margin: 1.4rem 0 .5rem;";
     print "    }";
     print "    pre {";
-    print "        padding: 1rem;";
     print "        overflow-x:auto;";
     print "        line-height: 1.5;";
     print "        border-radius: .4rem;";
     print "        font-family: monospace;";
     print "        background-color: var(--gray);";
     print "        border: 1px solid var(--dark-gray);";
+    print "    }";
+    print "    div.pre-head {";
+    print "        height: 1.5rem;";
+    print "        padding: 1rem;";
+    print "        padding-top: 0.5rem;";
+    print "        padding-bottom: 0.5rem;";
+    print "        font-weight: bold;";
+    print "        border-bottom: 1px solid var(--dark-gray);";
+    print "    }";
+    print "    div.pre-body {";
+    print "        padding: 1rem;";
+    print "    }";
+    print "    button.pre-button {";
+    print "        font-size: 100%; float: right;";
     print "    }";
     print "    code {";
     print "        padding: 0.3rem;";
@@ -636,16 +654,23 @@ function print_header() {
     
     print "<script>";
     print "    function clipboard(id) {";
-    print "        var copyText = document.getElementById(id);";
-    print "        var textContent = copyText.textContent.replace(/[📋⏎]/g, '')";
-    print "        navigator.clipboard.writeText(textContent);";
+    print "        var element = document.getElementById(id);";
+    print "        navigator.clipboard.writeText(element.textContent);";
     print "    }";
     print "    function wordwrap(id) {";
-    print "        var wordWrap = document.getElementById(id);";
-    print "        if (wordWrap.style.whiteSpace != 'pre-wrap') {";
-    print "            wordWrap.style.whiteSpace = 'pre-wrap';";
+    print "        var element = document.getElementById(id);";
+    print "        if (element.style.whiteSpace != 'pre-wrap') {";
+    print "            element.style.whiteSpace = 'pre-wrap';";
     print "        } else {";
-    print "            wordWrap.style.whiteSpace = 'pre';";
+    print "            element.style.whiteSpace = 'pre';";
+    print "        }";
+    print "    }";
+    print "    function collapse(id) {";
+    print "        var element = document.getElementById(id);";
+    print "        if (element.style.display != 'none') {";
+    print "            element.style.display = 'none';";
+    print "        } else {";
+    print "            element.style.display = 'block';";
     print "        }";
     print "    }";
     print "</script>"
@@ -769,7 +794,6 @@ function remove_prefix(line, prefix) {
 }
 
 /^$/ {
-
     if (!at("code")) {
         pop_until("root");
         next;
@@ -780,11 +804,21 @@ function remove_prefix(line, prefix) {
 # CONTAINER ELEMENTS
 #===========================================
 
+
+# indented, not at <li>, but one level over <li>
+/^[ ]{4}/ && !at("li") && (stk[idx-1] == "li") {
+    lv = level_list();
+    while (lv-- > 0) {
+        # remove <li>'s indents
+        sub("^[ ]{4}", "", $0);
+    }
+}
+
 $0 ~ blockquote_prefix {
 
-    if (at("li")) {
-        $0 = remove_indent($0);
-    }
+#    if (at("li")) {
+#        $0 = remove_indent($0);
+#    }
 
     lv = level_blockquote();
     cp = count_prefix($0, blockquote_prefix);
@@ -884,11 +918,7 @@ $0 ~ ol_prefix {
     next;
 }
 
-at("li") {
-    $0 = remove_indent($0);
-}
-
-/^[ ]{4}/ && !at("code") && !at("li") {
+/^[ ]{4}/ && !at("code") {
 
     if (!at("pre")) {
         push("pre");
