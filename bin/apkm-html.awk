@@ -10,7 +10,9 @@
 # * https://markdown-it.github.io
 # * https://www.markdownguide.org/cheat-sheet
 # * https://www.markdownguide.org/extended-syntax
-#
+# * https://www.codecademy.com/resources/docs/markdown
+# * https://docs.github.com/en/get-started/writing-on-github
+# 
 
 function ready() {
     return at("root") || at("blockquote") || at("li");
@@ -68,9 +70,10 @@ function unpush(    tag) {
 
 function write() {
 
-    if (!at("pre") && !at("code")) {
+    if (at("pre") || at("code")) {
+        buf = escapes(buf);
+    } else {
         # the order matters
-        buf = elements(buf);
         buf = diamonds(buf);
         buf = footnotes(buf);
         buf = images(buf);
@@ -301,24 +304,22 @@ function apply_style(buf, mark, len, tag,    out, found) {
     return buf;
 }
 
-# escaped
-# \'<...>'
-function elements(buf) {
+# '<...>'
+function escapes(buf) {
 
-    regex = "\\\\<[^<>]+>"
+    regex = "<[^<>]+>"
     while (buf ~ regex) {
-        buf = apply_elements(buf, regex);
-        break;
+        buf = apply_escape(buf, regex);
     }
     
     return buf;
 }
 
-function apply_elements(buf, regex,    out, found, arr) {
+function apply_escape(buf, regex,    out, found, arr) {
     
     if (match(buf, regex) > 0) {
     
-        found = substr(buf, RSTART + 2, RLENGTH - 3);
+        found = substr(buf, RSTART + 1, RLENGTH - 2);
         
         out = out substr(buf, 1, RSTART - 1);
         out = out "&lt;" found "&gt;"
@@ -335,13 +336,13 @@ function diamonds(buf) {
 
     regex = "<(http|ftp|[^@ ]+@)[^<> ]+>"
     while (buf ~ regex) {
-        buf = apply_diamonds(buf, regex);
+        buf = apply_diamond(buf, regex);
     }
     
     return buf;
 }
 
-function apply_diamonds(buf, regex,    out, found, arr) {
+function apply_diamond(buf, regex,    out, found, arr) {
     
     if (match(buf, regex) > 0) {
     
@@ -525,7 +526,7 @@ function apply_reflink(buf, regex,    out, found, arr) {
         id = substr(arr[2], 1, length(arr[2]) - 1);
         
         out = out substr(buf, 1, RSTART - 1);
-        out = out make("a", label, "href", "#footnote-" id);
+        out = out make("a", label, "href", "#link-" id);
         out = out substr(buf, RSTART + RLENGTH);
         
         return out;
@@ -672,10 +673,10 @@ function print_footer (    i, ref, href, title, text) {
         print "<ol>";
         for (i = 1; i <= footnote_count; i++) {
         
-            href = footnote_ref[i];
+            ref = footnote_ref[i];
             text = footnote_text[i];
             
-            print make("li", text " <a href='#footnote-" href "'>&#x1F517;</a>", "id", "footnote-" href);
+            print make("li", text " <a href='#footnote-" ref "'>&#x1F517;</a>", "id", "footnote-" ref);
             
         }
         print "</ol>";
