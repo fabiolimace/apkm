@@ -127,7 +127,7 @@ function open_tag() {
     write();
 
     if (at("pre") || at("code")) {
-        open_pre();
+        open_pre(id, "Code");
         return;
     }
     
@@ -151,10 +151,10 @@ function close_tag() {
     printf "</%s>\n", peek();
 }
 
-function open_pre() {
+function open_pre(id, title) {
     printf "<pre>";
     printf "<div class='pre-head'>";
-    printf "<span><span>";
+    printf "<span>%s</span>", title;
     printf "%s", buttons(id);
     printf "</div>";
     printf "<div class='pre-body' id='%s'>", id;
@@ -616,7 +616,6 @@ function print_header() {
     print "        padding: 1rem;";
     print "        padding-top: 0.5rem;";
     print "        padding-bottom: 0.5rem;";
-    print "        font-weight: bold;";
     print "        border-bottom: 1px solid var(--dark-gray);";
     print "    }";
     print "    div.pre-body {";
