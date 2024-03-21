@@ -7,12 +7,25 @@
 #
 # See:
 # 
+# * https://spec.commonmark.org
 # * https://markdown-it.github.io
+# * https://www.javatpoint.com/markdown
 # * https://www.markdownguide.org/cheat-sheet
 # * https://www.markdownguide.org/extended-syntax
+# * https://www.dotcms.com/docs/latest/markdown-syntax
 # * https://www.codecademy.com/resources/docs/markdown
+# * https://daringfireball.net/projects/markdown/syntax
+# * https://quarto.org/docs/authoring/markdown-basics.html
 # * https://docs.github.com/en/get-started/writing-on-github
-# 
+# * https://fuchsia.dev/fuchsia-src/contribute/docs/markdown
+# * https://www.ibm.com/docs/en/SSYKAV?topic=train-how-do-use-markdown
+# * https://www.knowledgehut.com/blog/web-development/what-is-markdown
+# * https://www.ionos.com/digitalguide/websites/web-development/markdown/
+# * https://learn.microsoft.com/en-us/contribute/content/markdown-reference
+# * https://developer.mozilla.org/en-US/docs/MDN/Writing_guidelines/Howto/Markdown_in_MDN
+# * https://confluence.atlassian.com/bitbucketserver/markdown-syntax-guide-776639995.html
+# * https://learn.microsoft.com/en-us/azure/devops/project/wiki/markdown-guidance?view=azure-devops
+# * https://medium.com/analytics-vidhya/the-ultimate-markdown-guide-for-jupyter-notebook-d5e5abf728fd
 
 function ready() {
     return at("root") || at("blockquote") || at("li");
@@ -613,6 +626,7 @@ function print_header() {
     print "        border: 1px solid var(--dark-gray);";
     print "        border-left: 12px solid var(--dark-gray);";
     print "    }";
+    print "    dt { font-weight: bold; }";
     print "    hr { border: 1px solid var(--gray); }";
     print "    img { height: auto; max-width: 100%; }";
     print "    table { border-collapse: collapse; margin-bottom: 1.3rem; }";
@@ -922,6 +936,29 @@ function undo(    tmp) {
     append($0);
     pop();
     next;
+}
+
+# definition list
+/^:/ {
+
+    dd = substr($0, 2);
+    
+    if (at("p")) {
+        dt = undo();
+        push("dl");
+        push("dt");
+        append(dt);
+        pop();
+        push("dd");
+        append(dd);
+        next;
+    }
+    if (at("dd")) {
+        pop();
+        push("dd");
+        append(dd);
+        next;
+    }
 }
 
 /^[*_-]{3,}[ ]*$/ {
