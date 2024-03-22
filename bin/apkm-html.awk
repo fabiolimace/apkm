@@ -644,7 +644,7 @@ function print_header() {
     print "        border-left: 12px solid var(--dark-gray);";
     print "    }";
     print "    dt { font-weight: bold; }";
-    print "    hr { border: 1px solid var(--gray); }";
+    print "    hr { border: 1px solid var(--dark-gray); }";
     print "    img { height: auto; max-width: 100%; }";
     print "    table { border-collapse: collapse; margin-bottom: 1.3rem; }";
     print "    th { padding: .7rem; border-bottom: 1px solid var(--black);}";
@@ -803,7 +803,6 @@ function remove_prefix(line, prefix) {
 # CONTAINER ELEMENTS
 #===========================================
 
-
 # indented, not at <li>, but one level over <li>
 /^[ ]{4}/ && !at("li") && (stk[idx-1] == "li") {
     lv = level_list();
@@ -917,17 +916,6 @@ $0 ~ ol_prefix {
     next;
 }
 
-/^[ ]{4}/ && !at("code") {
-
-    if (!at("pre")) {
-        push("pre");
-    }
-
-    sub("^[ ]{4}", "", $0);
-    append($0);
-    next;
-}
-
 /^```/ {
 
     if (!at("code")) {
@@ -936,6 +924,22 @@ $0 ~ ol_prefix {
     }
     
     pop();
+    next;
+}
+
+at("code") {
+    append($0);
+    next;
+}
+
+/^[ ]{4}/ {
+
+    if (!at("pre")) {
+        push("pre");
+    }
+
+    sub("^[ ]{4}", "", $0);
+    append($0);
     next;
 }
 

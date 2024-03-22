@@ -40,7 +40,6 @@ Code 4
       </head>
     </html>
 
-
 ---
 
 Code 5
@@ -52,6 +51,34 @@ Code 5
     </html>
 ```
 
+---
+
+Code 6
+
+```
+---
+```
+
+---
+
+Code 7
+
+```
+Heading 1
+===========
+Heading 2
+-----------
+```
+
+---
+
+Code 8
+
+```
+# Topic 1
+## Topic 2
+```
+
 -----------------
 
 Sources
@@ -59,3 +86,4 @@ Sources
 * https://www.codecademy.com/resources/docs/markdown
 * https://www.markdownguide.org/basic-syntax/
 * https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#quoting-code
+
