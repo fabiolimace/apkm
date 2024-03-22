@@ -52,20 +52,17 @@ function peek_attr() {
     return stk_attr[idx];
 }
 
-function push(tag, attr1, val1, attr2, val2,    pair1, pair2) {
+function push(tag, attr) {
 
-    if (attr1 != "") {
-        pair1 = " " attr1 "='" val1 "'";
-    }
+    ++id;
+    ++idx;
 
-    if (attr2 != "") {
-        pair2 = " " attr2 "='" val2 "'";
-    }
-
-    stk[++idx] = tag;
-    stk_attr[idx] = pair1 pair2;
+    stk[idx] = tag;
+    stk_attr[idx] = attr;
     
-    open_tag();
+    open_tag(id);
+    
+    return id;
 }
 
 function pop() {
@@ -121,13 +118,12 @@ function append(str, sep) {
     }
 }
 
-function open_tag() {
+function open_tag(id) {
 
-    ++id;
     write();
 
     if (at("pre") || at("code")) {
-        open_pre(id, "Code");
+        open_pre(id, peek_attr_value("title"));
         return;
     }
     
@@ -149,6 +145,16 @@ function close_tag() {
     }
     
     printf "</%s>\n", peek();
+}
+
+function peek_attr_value(key,    found) {
+    attr = " " peek_attr();
+    if (match(attr, "[ ]" key "='[^']*'") > 0) {
+        found = substr(attr, RSTART, RLENGTH);
+        match(found, "='[^']*'");
+        return substr(found, RSTART + 2, RLENGTH - 3);
+    }
+    return "";
 }
 
 function open_pre(id, title) {
@@ -174,24 +180,12 @@ function buttons(id,    style, clipboard, wordwrap) {
     return clipboard collapse wordwrap;
 }
 
-function make(tag, text, attr1, val1, attr2, val2, attr3, val3,    pair1, pair2, pair3) {
-
-        if (attr1 != "") {
-            pair1 = " " attr1 "='" val1 "'";
-        }
-        
-        if (attr2 != "") {
-            pair2 = " " attr2 "='" val2 "'";
-        }
-        
-        if (attr3 != "") {
-            pair3 = " " attr3 "='" val3 "'";
-        }
+function make(tag, text, attr) {
         
         if (text == "") {
-            return "<" tag pair1 pair2 pair3 " />";
+            return "<" tag " " attr "/>";
         } else {
-            return "<" tag pair1 pair2 pair3 " >" text "</" tag ">";
+            return "<" tag " " attr ">" text "</" tag ">";
         }
 }
 
@@ -369,13 +363,13 @@ function apply_diamond(buf, regex,    out, found, arr) {
         if (found ~ /^(http|ftp)/) {
             push_link(id++, found);
             out = out substr(buf, 1, RSTART - 1);
-            out = out make("a", found, "href", found);
+            out = out make("a", found, "href='" found "'");
             out = out substr(buf, RSTART + RLENGTH);
             return out;
         } else if (found ~ /^[^@ ]+@/) {
             push_link(id++, "mailto:" found);
             out = out substr(buf, 1, RSTART - 1);
-            out = out make("a", found, "href", "mailto:" found);
+            out = out make("a", found, "href='mailto:" found "'");
             out = out substr(buf, RSTART + RLENGTH);
             return out;
         } else {
@@ -430,7 +424,7 @@ function apply_link(buf, regex,    out, found, href, title, text, rstart, rlengt
         }
         
         out = out substr(buf, 1, rstart - 1);
-        out = out make("a", text, "href", href, "title", title);
+        out = out make("a", text, "href='" href "' title='" title "'");
         out = out substr(buf, rstart + rlength);
         
         push_link(id++, href, title, text);
@@ -481,7 +475,7 @@ function apply_image(buf, regex,    out, found, src, title, alt, rstart, rlength
         }
         
         out = out substr(buf, 1, rstart - 1);
-        out = out make("img", "", "alt", alt, "src", src, "title", title);
+        out = out make("img", "", "alt='" alt "' src='" src "' title='" title "'");
         out = out substr(buf, rstart + rlength);
         
         return out;
@@ -510,7 +504,7 @@ function apply_footnote(buf, regex,    out, found) {
         found = substr(buf, RSTART + 2, RLENGTH - 3);
         
         out = out substr(buf, 1, RSTART - 1);
-        out = out make("a", "<sup>[" found "]<sup>", "href", "#footnote-" found);
+        out = out make("a", "<sup>[" found "]<sup>", "href='#foot-" found "'");
         out = out substr(buf, RSTART + RLENGTH);
         
         return out;
@@ -544,7 +538,7 @@ function apply_reflink(buf, regex,    out, found, arr) {
         id = substr(arr[2], 1, length(arr[2]) - 1);
         
         out = out substr(buf, 1, RSTART - 1);
-        out = out make("a", label, "href", "#link-" id);
+        out = out make("a", label, "href='#link-" id "'");
         out = out substr(buf, RSTART + RLENGTH);
         
         return out;
@@ -614,6 +608,7 @@ function print_header() {
     print "    div.pre-head {";
     print "        height: 1.5rem;";
     print "        padding: 1rem;";
+    print "        font-weight: bold;";
     print "        padding-top: 0.5rem;";
     print "        padding-bottom: 0.5rem;";
     print "        border-bottom: 1px solid var(--dark-gray);";
@@ -681,7 +676,10 @@ function print_header() {
 function print_footer (    i, ref, href, title, text) {
 
     print "<footer>";
-    print "<hr>";
+    
+    if (link_count > 0 || footnote_count > 0) {
+        print "<hr>";
+    }
     
     if (link_count > 0) {
         print "<h6>LINKS</h6>";
@@ -691,16 +689,12 @@ function print_footer (    i, ref, href, title, text) {
             ref = link_ref[i];
             href = link_href[i];
             title = link_title[i];
-            text = link_text[i];
             
-            if (text == "") {
-                text = title;
-            }
-            if (text == "") {
-                text = href;
+            if (title == "") {
+                title = href;
             }
             
-            print make("li", text " <a href='" href "'>&#x1F517;</a>", "id", "link-" ref, "title", title);
+            print make("li", title " <a href='" href "' id='link-" ref "'>&#x1F517;</a>");
             
         }
         print "</ol>";
@@ -714,7 +708,7 @@ function print_footer (    i, ref, href, title, text) {
             ref = footnote_ref[i];
             text = footnote_text[i];
             
-            print make("li", text " <a href='#footnote-" ref "'>&#x1F517;</a>", "id", "footnote-" ref);
+            print make("li", text " <a href='#foot-" ref "' id='link-" ref "'>&#x1F517;</a>");
             
         }
         print "</ol>";
@@ -871,7 +865,7 @@ function parse_list_item(tag, prefix, start) {
         }
         
         if (tag == "ol") {
-            push(tag, "start", start);
+            push(tag, "start='" start "'");
         } else {
             push(tag);
         }
@@ -919,7 +913,11 @@ $0 ~ ol_prefix {
 /^```/ {
 
     if (!at("code")) {
-        push("code");
+    
+        sub(/^`+/, "");
+        title = $0;
+        
+        push("code", "title='" title "'");
         next;
     }
     
@@ -1076,7 +1074,7 @@ function set_table_aligns(line,    arr, regex, found, l, r, n) {
         for(i = 2; i < n; i++) {
         
             if (table_aligns[i] != "") {
-                push("td", "style", "text-align: " table_aligns[i] ";");
+                push("td", "style='text-align:" table_aligns[i] ";'");
             } else {
                 push("td");
             }
@@ -1170,3 +1168,4 @@ END {
     pop_until("root");
     print_footer();
 }
+
