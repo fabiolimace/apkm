@@ -835,7 +835,7 @@ blank == -1 {
 
     blank = -1;
     
-    if (!at("pre") && !at("code") ) {
+    if (!at("code") ) {
         pop_p();
         pop_blockquote();
     }
