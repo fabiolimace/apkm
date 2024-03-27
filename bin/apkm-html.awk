@@ -604,7 +604,7 @@ function print_header() {
     print "    h4 { font-size: 1.3rem; }";
     print "    h5 { font-size: 1.2rem; }";
     print "    h6 { font-size: 1.1rem; }";
-    print "    h1, h2, h3 {";
+    print "    h1, h2 {";
     print "        padding-bottom: 0.5rem;";
     print "        border-bottom: 2px solid var(--gray);";
     print "    }";
@@ -832,15 +832,12 @@ blank == -1 {
 }
 
 /^[ ]*$/ {
-
-    blank = -1;
-    
-    if (!at("code") ) {
+    if (!at("code")) {
+        blank = -1;
         pop_p();
         pop_blockquote();
+        next;
     }
-    
-    next;
 }
 
 #===========================================
@@ -1138,6 +1135,7 @@ function undo(    tmp) {
 
 function set_table_aligns(line,    arr, regex, found, l, r, n) {
 
+    delete table_aligns;
     regex = "(:--[-]+:|:--[-]+|--[-]+:)";
 
     delete arr; # starts from 2
