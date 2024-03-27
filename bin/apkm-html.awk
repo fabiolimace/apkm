@@ -32,10 +32,6 @@ function ready() {
     return at("root") || at("blockquote") || at("li");
 }
 
-function blank() {
-    return buf == "";
-}
-
 function empty() {
     return idx == 0
 }
@@ -62,10 +58,19 @@ function push(tag, attr) {
     
     open_tag(id);
     
+    # close <br> and <hr>
+    if (at("br") || at("hr")) {
+        pop();
+    }
+    
     return id;
 }
 
 function pop() {
+    if (empty()) {
+        return "";
+    }
+    
     close_tag();
     return unpush();
 }
@@ -121,6 +126,11 @@ function append(str, sep) {
 function open_tag(id) {
 
     write();
+    
+    if (at("br") || at("hr")) {
+        printf "<%s />\n", peek();
+        return;
+    }
 
     if (at("pre") || at("code")) {
         open_pre(id, peek_attr_value("title"));
@@ -138,6 +148,12 @@ function open_tag(id) {
 function close_tag() {
 
     write();
+    
+    if (at("br") || at("hr")) {
+        # do nothing.
+        # already closed.
+        return;
+    }
     
     if (at("pre") || at("code")) {
         close_pre();
@@ -674,7 +690,7 @@ function print_header() {
 }
 
 function print_footer (    i, ref, href, title, text) {
-
+    
     print "<footer>";
     
     if (link_count > 0 || footnote_count > 0) {
@@ -715,6 +731,7 @@ function print_footer (    i, ref, href, title, text) {
     }
     
     print "</footer>";
+    
     print "</body>";
     print "</html>";
 }
@@ -730,6 +747,8 @@ BEGIN {
     blockquote_prefix = "^[ ]*>[ ]?";
     ul_prefix = "^([ ]{4})*[ ]{0,3}[*+-][ ]"
     ol_prefix = "^([ ]{4})*[ ]{0,3}[[:digit:]]+\\.[ ]"
+    
+    blank = -1; # prepare to signal blank line
     
     print_header();
 }
@@ -756,6 +775,7 @@ function level_list(   i, n) {
         if (stk[i] == "ul" || stk[i] == "ol") {
             n++;
         }
+        if (stk[i] == "blockquote") break;
     }
     return n;
 }
@@ -786,46 +806,81 @@ function remove_prefix(line, prefix) {
     return line;
 }
 
-/^$/ {
-    if (!at("code")) {
-        pop_until("root");
-        next;
-    }
+#===========================================
+# TABULATIONS
+#===========================================
+
+{
+    gsub("\t", "    ", $0); # replace tabas with 4 spaces
 }
 
 #===========================================
-# CONTAINER ELEMENTS
+# BLANK LINES
 #===========================================
 
-# indented, not at <li>, but one level over <li>
-/^[ ]{4}/ && !at("li") && (stk[idx-1] == "li") {
-    lv = level_list();
-    while (lv-- > 0) {
-        # remove <li>'s indents
-        sub("^[ ]{4}", "", $0);
+# Blank line flag states:
+#  0: not signaling blank line
+# -1: preparing to signal blank line
+#  1: signaling blank line
+
+blank == 1 {
+    blank = 0;
+}
+
+blank == -1 {
+    blank = 1;
+}
+
+/^[ ]*$/ {
+
+    blank = -1;
+    
+    if (!at("pre") && !at("code") ) {
+        pop_p();
+        pop_blockquote();
     }
+    
+    next;
+}
+
+#===========================================
+# BLOCKQUOTE
+#===========================================
+
+function pop_blockquote() {
+
+    if (!at("blockquote")) return;
+
+    lv = level_blockquote();
+    cp = count_prefix($0, blockquote_prefix);
+    
+    n = lv - cp;
+    while (n-- > 0) {
+        if (at("blockquote")) pop();
+    }
+}
+
+$0 !~ blockquote_prefix {
+    pop_blockquote();
 }
 
 $0 ~ blockquote_prefix {
-
-#    if (at("li")) {
-#        $0 = remove_indent($0);
-#    }
 
     lv = level_blockquote();
     cp = count_prefix($0, blockquote_prefix);
     
     $0 = remove_prefix($0, blockquote_prefix);
     
-    if (cp >= lv) {
+    if (cp > lv) {
         n = cp - lv;
         while (n-- > 0) {
-            push("blockquote")
+            pop_p();
+            push("blockquote");
         }
     } else {
         n = lv - cp;
         while (n-- > 0) {
-            pop()
+            pop();
         }
     }
     
@@ -834,54 +889,113 @@ $0 ~ blockquote_prefix {
     }
 }
 
-function list_start(line,    n) {
+#===========================================
+# LIST ITENS
+#===========================================
+
+function pop_p() {
+    if (!ready()) pop();
+}
+
+function pop_list () {
+
+    if (!at("li")) return;
+
+    lv = level_list();
+    cp = count_indent($0);
+    
+    n = lv - cp;
+    while (n-- > 0) {
+        if (stk[idx-1] == "li") pop();
+        if (at("li")) pop();
+        if (at("ol") || at("ul")) pop();
+    }
+}
+
+function remove_list_indent (line) {
+
+    n = level_list();
+    while (n > 0) {
+        sub(/^[ ]{4}/, "", line);
+        n--;
+    }
+    
+    return line;
+}
+
+$0 !~ ul_prefix && $0 !~ ol_prefix {
+
+    temp = remove_list_indent($0);
+    
+    if (blank > 0) {
+        pop_list();
+    }
+    
+    $0 = temp;
+}
+
+function list_start(line) {
     sub("^[ ]+", "", line);
     match(line, "^[[:digit:]]+");
-    if (RSTART == 0) {
-        return 0;
-    }
     return substr(line, RSTART, RLENGTH);
 }
 
-function parse_list_item(tag, prefix, start) {
+function push_li(tag, start) {
 
-    lv = level_list() - 1;
-    cp = count_indent($0);
+    if (tag == "ol") {
+        if (start == "") {
+            if (!at("ul") && !at("ol")) push(tag);
+        } else {
+            if (!at("ul") && !at("ol")) push(tag, "start='" start "'");
+        }
+    } else {
+        if (!at("ul") && !at("ol")) push(tag);
+    }
+    
+    push("li");
+}
+
+function parse_list_item(tag, prefix, start) {
+    
+    lv = level_list();
+    cp = count_indent($0) + 1;
     
     $0 = remove_prefix($0, prefix);
-    
-    start = start != "" ? start : 1;
 
     if (cp == lv) {
-        pop();
-        push("li");
+    
+        pop_p();
+        if (at("li")) pop();
+        push_li(tag);
+        append($0);
+        next;
+        
     } else if (cp > lv) {
         
         # add levels
-        n = cp - lv - 1;
+        n = (cp - 1) - lv;
         while (n-- > 0) {
-            push(tag);
-            push("li");
+            push_li(tag);
         }
         
-        if (tag == "ol") {
-            push(tag, "start='" start "'");
-        } else {
-            push(tag);
-        }
-        push("li");
+        push_li(tag, start);
+        append($0);
+        next;
         
     } else if (cp < lv) {
     
-        # rem levels
+        # del levels
         n = lv - cp;
         while (n-- > 0) {
-            pop();
-            pop();
+            pop_p();
+            if (at("li")) pop();
+            if (at("ol") || at("ul")) pop();
         }
         
-        pop();
-        push("li");
+        if (at("li")) pop();
+        push_li(tag);
+        append($0);
+        next;
     }
 }
 
@@ -899,16 +1013,8 @@ $0 ~ ol_prefix {
 }
 
 #===========================================
-# SIMPLE ELEMENTS
+# CODE BLOCKS
 #===========================================
-
-{
-    gsub("\t", "    ", $0); # replace tabas with 4 spaces
-}
-
-/^$/ {
-    next;
-}
 
 /^```/ {
 
@@ -941,6 +1047,10 @@ at("code") {
     next;
 }
 
+#===========================================
+# HEADING
+#===========================================
+
 # undo last push
 function undo(    tmp) {
     tmp = buf;
@@ -955,7 +1065,7 @@ function undo(    tmp) {
     $0 = undo();
     push("h1");
     append($0);
-    pop();
+    pop_p();
     next;
 }
 
@@ -965,11 +1075,41 @@ function undo(    tmp) {
     $0 = undo();
     push("h2");
     append($0);
-    pop();
+    pop_p();
     next;
 }
 
-# definition list
+/^[\x23]+[ ]+/ {
+    
+    match($0, "\x23+")
+    n = RLENGTH > 6 ? 6 : RLENGTH
+    
+    # remove leading hashes
+    $0 = substr($0, n + 1)
+    # remove leading spaces
+    sub(/^[ ]+/, "")
+
+    pop_p();
+    push("h" n);
+    append($0);
+    next;
+}
+
+
+#===========================================
+# HORIZONTAL RULER
+#===========================================
+
+/^[*_-]{3,}[ ]*$/ {
+    pop_p();
+    push("hr");
+    next;
+}
+
+#===========================================
+# DEFINITION LIST
+#===========================================
+
 /^:/ {
 
     dd = substr($0, 2);
@@ -979,40 +1119,22 @@ function undo(    tmp) {
         push("dl");
         push("dt");
         append(dt);
-        pop();
+        pop_p();
         push("dd");
         append(dd);
         next;
     }
     if (at("dd")) {
-        pop();
+        pop_p();
         push("dd");
         append(dd);
         next;
     }
 }
 
-/^[*_-]{3,}[ ]*$/ {
-
-    # <hr>
-    print make("hr");
-    next;
-}
-
-/^[\x23]+[ ]+/ {
-
-    match($0, "\x23+")
-    n = RLENGTH > 6 ? 6 : RLENGTH
-    
-    # remove leading hashes
-    $0 = substr($0, n + 1)
-    # remove leading spaces
-    sub(/^[ ]+/, "")
-    
-    push("h" n);
-    append($0);
-    next;
-}
+#===========================================
+# TABLE
+#===========================================
 
 function set_table_aligns(line,    arr, regex, found, l, r, n) {
 
@@ -1087,6 +1209,10 @@ function set_table_aligns(line,    arr, regex, found, l, r, n) {
     }
 }
 
+#===========================================
+# FOOTNOTE
+#===========================================
+
 function push_footnote(ref, text) {
     footnote_count++
     footnote_ref[footnote_count] = ref;
@@ -1105,6 +1231,10 @@ function push_footnote(ref, text) {
     }
     next;
 }
+
+#===========================================
+# (REFERENCE STYLE) LINK
+#===========================================
 
 function push_link(ref, href, title, text) {
     link_count++;
@@ -1146,26 +1276,34 @@ function push_link(ref, href, title, text) {
     next;
 }
 
-/^.+/ && at("li") {
-    if (!blank() && $0 != "") {
-        push("p");
-        append($0);
-        pop();
-        next;
+#===========================================
+# PARAGRAPH
+#===========================================
+
+/^.+$/ {
+    if (ready()) {
+        if (at("li")) {
+            if (blank == 1) {
+                push("p");
+            }
+        } else {
+            push("p");
+        }
     }
     append($0);
     next;
 }
 
-/^.+/ {
-    if (ready()) {
-        push("p");
-    }
-    append($0);
-}
+#===========================================
+# THE END
+#===========================================
 
 END {
-    pop_until("root");
+
+    pop_p();
+    pop_list();
+    pop_blockquote();
+    
     print_footer();
 }
 

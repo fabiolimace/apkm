@@ -23,8 +23,6 @@ git commit
 
 ---
 
-Code 5
-
 ```html
 <html>
   <head>
@@ -34,15 +32,11 @@ Code 5
 
 ---
 
-Code 6
-
 ```
 ---
 ```
 
 ---
-
-Code 7
 
 ```
 Heading 1
@@ -52,8 +46,6 @@ Heading 2
 ```
 
 ---
-
-Code 8
 
 ```
 # Topic 1

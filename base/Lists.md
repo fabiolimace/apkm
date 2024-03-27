@@ -188,6 +188,32 @@ With indent after the second item:
 1. This is the first list item.
 1. Here's the second list item.
     
+    ```code
+    I need to add a code block below the second list item.
+    I need to add a code block below the second list item.
+    ```
+    
+1. And here's the third list item.
+
+Without indent after the second item:
+
+1. This is the first list item.
+1. Here's the second list item.
+
+    ```code
+    I need to add a code block below the second list item.
+    I need to add a code block below the second list item.
+    ```
+
+1. And here's the third list item.
+
+-----------------------------
+
+With indent after the second item:
+
+1. This is the first list item.
+1. Here's the second list item.
+    
     ![Tux, the Linux mascot](https://mdg.imgix.net/assets/images/tux.png)
     
 1. And here's the third list item.
