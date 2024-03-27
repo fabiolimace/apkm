@@ -1,16 +1,12 @@
 Tables
 =========
 
-Table 1
-
 | Syntax      | Description |
 | ----------- | ----------- |
 | Header      | Title       |
 | Paragraph   | Text        |
 
 ---
-
-Table 2
 
 | Syntax | Description |
 | --- | ----------- |
@@ -19,16 +15,12 @@ Table 2
 
 ---
 
-Table 3
-
 | Syntax      | Description | Test Text     |
 | :---        |    :----:   |          ---: |
 | Header      | Title       | Here's this   |
 | Paragraph   | Text        | And more      |
 
 ---
-
-Table 4
 
 | First Header  | Second Header |
 | ------------- | ------------- |
@@ -37,16 +29,12 @@ Table 4
 
 ---
 
-Table 5
-
 | Command | Description |
 | --- | --- |
 | git status | List all new or modified files |
 | git diff | Show file differences that haven't been staged |
 
 ---
-
-Table 6
 
 | Command | Description |
 | --- | --- |
@@ -55,8 +43,6 @@ Table 6
 
 ---
 
-Table 7
-
 | Left-aligned | Center-aligned | Right-aligned |
 | :---         |     :---:      |          ---: |
 | git status   | git status     | git status    |
@@ -64,16 +50,12 @@ Table 7
 
 ---
 
-Table 8
-
 | Name     | Character |
 | ---      | ---       |
 | Backtick | `         |
 | Pipe     | \|        |
 
 ---
-
-Table 9
 
 | Month    | Savings |
 | -------- | ------- |
@@ -83,8 +65,6 @@ Table 9
 
 ---
 
-Table 10
-
 | Month | Savings |
 | -------- | ------- |
 | January | $250 |
@@ -92,8 +72,6 @@ Table 10
 | March | $420 |
 
 ---
-
-Table 11
 
 | Item              | In Stock | Price |
 | :---------------- | :------: | ----: |
@@ -104,8 +82,6 @@ Table 11
 
 ---
 
-Table 12
-
 | Option | Description |
 | ------ | ----------- |
 | data   | path to data files to supply the data that will be passed into templates. |
@@ -113,8 +89,6 @@ Table 12
 | ext    | extension to be used for dest files. |
 
 ---
-
-Table 13
 
 | Option | Description |
 | ------:| -----------:|

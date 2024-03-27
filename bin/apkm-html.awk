@@ -430,8 +430,8 @@ function apply_link(buf, regex,    out, found, href, title, text, rstart, rlengt
             text = substr(found, RSTART + 1, RLENGTH - 2);
         }
         
-        if (match(found, "\\([^)]*([ ]\"[^\"]*\")*\\)") > 0) {
-            href = substr(found, RSTART + 1, RLENGTH - 2);
+        if (match(found, "\\]\\([^ ]+([ ]+\"[^\"]*\")?\\)") > 0) {
+            href = substr(found, RSTART + 2, RLENGTH - 3);
         }
         
         if (match(href, "([ ]\"[^\"]*\")") > 0) {
@@ -481,8 +481,8 @@ function apply_image(buf, regex,    out, found, src, title, alt, rstart, rlength
             alt = substr(found, RSTART + 1, RLENGTH - 2);
         }
         
-        if (match(found, "\\([^)]*([ ]\"[^\"]*\")*\\)") > 0) {
-            src = substr(found, RSTART + 1, RLENGTH - 2);
+        if (match(found, "\\]\\([^ ]+([ ]+\"[^\"]*\")?\\)") > 0) {
+            src = substr(found, RSTART + 2, RLENGTH - 3);
         }
         
         if (match(src, "([ ]\"[^\"]*\")") > 0) {
@@ -1252,7 +1252,7 @@ function push_link(ref, href, title, text) {
     # ^[ref]: href (title)
     # ^[ref]: <href> "title"
     # ^[ref]: <href> 'title'
-    # ^[ref]: <href> ("title")
+    # ^[ref]: <href> (title)
     if (match($0, /\[[^]]+\][:]/) > 0) {
         
         ref = substr($0, RSTART + 1, RLENGTH - 3);
