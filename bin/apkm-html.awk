@@ -974,7 +974,6 @@ function parse_list_item(tag, prefix, start) {
         if (at("li")) pop();
         push_li(tag);
         append($0);
-        next;
         
     } else if (cp > lv) {
         
@@ -986,7 +985,6 @@ function parse_list_item(tag, prefix, start) {
         
         push_li(tag, start);
         append($0);
-        next;
         
     } else if (cp < lv) {
     
@@ -1001,12 +999,12 @@ function parse_list_item(tag, prefix, start) {
         if (at("li")) pop();
         push_li(tag);
         append($0);
-        next;
     }
 }
 
 $0 ~ ul_prefix {
     parse_list_item("ul", ul_prefix);
+    next;
 }
 
 $0 ~ ol_prefix {
@@ -1016,6 +1014,7 @@ $0 ~ ol_prefix {
     start = list_start($0);
 
     parse_list_item("ol", ol_prefix, start);
+    next;
 }
 
 #===========================================
