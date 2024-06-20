@@ -21,6 +21,10 @@ HTML_DIR="$WORKING_DIR/.apkm/html";
 META_DIR="$WORKING_DIR/.apkm/meta";
 DATABASE="$WORKING_DIR/.apkm/meta.db"
 
+CR=$'\r'
+LF=$'\n'
+TAB=$'\t'
+
 function validate_program_path {
 
     if [[ ! -f "$PROGRAM_DIR/apkm-init.sh" ]];
@@ -44,6 +48,7 @@ $PROGRAM_DIR/apkm-save.sh
 $PROGRAM_DIR/apkm-save-html.sh
 $PROGRAM_DIR/apkm-save-links.sh
 $PROGRAM_DIR/apkm-save-meta.sh
+$PROGRAM_DIR/apkm-save-hist.sh
 EOF
 
 }

@@ -18,6 +18,7 @@ while read -s line; do
 
     FILE=`echo $line | sed 's,^\./,,'`; # remove leading "./"
     
+    "$PROGRAM_DIR/apkm-save-hist.sh" "$FILE";
     "$PROGRAM_DIR/apkm-save-html.sh" "$FILE";
     "$PROGRAM_DIR/apkm-save-meta.sh" "$FILE";
     "$PROGRAM_DIR/apkm-save-links.sh" "$FILE";

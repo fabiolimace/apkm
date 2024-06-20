@@ -77,6 +77,17 @@ CREATE TABLE link_ (
     FOREIGN KEY (dest_) REFERENCES meta_ (uuid_),
     PRIMARY KEY (orig_, href_)
 ) STRICT;
+-- Create history table
+CREATE TABLE hist_ (
+    uuid_ TEXT, -- UUIDv8 of the file path
+    updt_ TEXT NOT NULL, -- Update date
+    hash_ TEXT NOT NULL, -- File hash
+    diff_ TEXT NOT NULL, -- Unified DIFF
+    CHECK (updt_ REGEXP '[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}'),
+    CHECK (uuid_ REGEXP '[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}'),
+    FOREIGN KEY (uuid_) REFERENCES meta_ (uuid_),
+    PRIMARY KEY (uuid_, updt_)
+) STRICT;
 EOF
 
 }
