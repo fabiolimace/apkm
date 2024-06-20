@@ -64,7 +64,7 @@ function save_links_db {
             TYPE="I";
         fi;
         
-        echo "INSERT INTO link_ values ('$ORIG', '$DEST', '$HREF', '$ROAD', '$TYPE', '$BROK');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
+        echo "INSERT OR REPLACE INTO link_ values ('$ORIG', '$DEST', '$HREF', '$ROAD', '$TYPE', '$BROK');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
         
     done < "$META"
 }

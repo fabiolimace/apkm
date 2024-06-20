@@ -93,7 +93,7 @@ function save_meta_db {
         esac
     done < "$META"
     
-    echo "INSERT INTO meta_ values ('$UUID', '$ROAD', '$NAME', '$HASH', '$CRDT', '$UPDT', '$TAGS');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
+    echo "INSERT OR REPLACE INTO meta_ values ('$UUID', '$ROAD', '$NAME', '$HASH', '$CRDT', '$UPDT', '$TAGS');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
 }
 
 FILE="${1}"
