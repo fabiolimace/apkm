@@ -57,9 +57,9 @@ CREATE TABLE meta_ (
     crdt_ TEXT NOT NULL, -- Create date
     updt_ TEXT NOT NULL, -- Update date
     tags_ TEXT NULL, -- Comma separated values
-    CHECK (crdt_ REGEXP '[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}'),
-    CHECK (updt_ REGEXP '[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}'),
-    CHECK (uuid_ REGEXP '[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}')
+    CHECK (crdt_ REGEXP '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+-][0-9]{2}:[0-9]{2}'),
+    CHECK (updt_ REGEXP '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+-][0-9]{2}:[0-9]{2}'),
+    CHECK (uuid_ REGEXP '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}')
 ) STRICT;
 -- Create links table
 CREATE TABLE link_ (
@@ -71,8 +71,8 @@ CREATE TABLE link_ (
     brok_ INTEGER DEFAULT 0 NOT NULL, -- Broken link: unknown (0), broken (1)
     CHECK (type_ IN ('I', 'E')),
     CHECK (brok_ IN (0, 1)),
-    CHECK (orig_ REGEXP '[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}'),
-    CHECK (dest_ REGEXP '[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}'),
+    CHECK (orig_ REGEXP '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'),
+    CHECK (dest_ REGEXP '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'),
     FOREIGN KEY (orig_) REFERENCES meta_ (uuid_),
     FOREIGN KEY (dest_) REFERENCES meta_ (uuid_),
     PRIMARY KEY (orig_, href_)
@@ -83,8 +83,8 @@ CREATE TABLE hist_ (
     updt_ TEXT NOT NULL, -- Update date
     hash_ TEXT NOT NULL, -- File hash
     diff_ TEXT NOT NULL, -- Unified DIFF
-    CHECK (updt_ REGEXP '[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}'),
-    CHECK (uuid_ REGEXP '[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}'),
+    CHECK (updt_ REGEXP '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+-][0-9]{2}:[0-9]{2}'),
+    CHECK (uuid_ REGEXP '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'),
     FOREIGN KEY (uuid_) REFERENCES meta_ (uuid_),
     PRIMARY KEY (uuid_, updt_)
 ) STRICT;

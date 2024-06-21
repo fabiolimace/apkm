@@ -86,7 +86,7 @@ function validate_program_and_working_paths {
 }
 
 function now {
-    date '+%F %T';
+    date -Iseconds; # ISO-8601: 0000-00-00T00:00:00+00:00
 }
 
 function file_hash {
