@@ -72,14 +72,16 @@ The metadata table schema:
 
 ```sql
 CREATE TABLE meta_ (
-    uuid_ TEXT, -- UUIDv8 of the file path
+    uuid_ TEXT PRIMARY KEY, -- UUIDv8 of the file path
     path_ TEXT NOT NULL, -- Path relative to the base directory
     name_ TEXT NOT NULL, -- File name
     hash_ TEXT NOT NULL, -- File hash
     crdt_ TEXT NOT NULL, -- Create date
     updt_ TEXT NOT NULL, -- Update date
     tags_ TEXT NULL, -- Comma separated values
-    CONSTRAINT meta_uuid_ PRIMARY KEY (uuid_)
+    CHECK (crdt_ REGEXP '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+-][0-9]{2}:[0-9]{2}'),
+    CHECK (updt_ REGEXP '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+-][0-9]{2}:[0-9]{2}'),
+    CHECK (uuid_ REGEXP '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}')
 ) STRICT;
 ```
 
@@ -95,9 +97,26 @@ CREATE TABLE link_ (
     brok_ INTEGER DEFAULT 0 NOT NULL, -- Broken link: unknown (0), broken (1)
     CHECK (type_ IN ('I', 'E')),
     CHECK (brok_ IN (0, 1)),
-    PRIMARY KEY (orig_, href_),
+    CHECK (orig_ REGEXP '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'),
+    CHECK (dest_ REGEXP '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'),
     FOREIGN KEY (orig_) REFERENCES meta_ (uuid_),
-    FOREIGN KEY (dest_) REFERENCES meta_ (uuid_)
+    FOREIGN KEY (dest_) REFERENCES meta_ (uuid_),
+    PRIMARY KEY (orig_, href_)
+) STRICT;
+```
+
+The history table schema:
+
+```sql
+CREATE TABLE hist_ (
+    uuid_ TEXT, -- UUIDv8 of the file path
+    updt_ TEXT NOT NULL, -- Update date
+    hash_ TEXT NOT NULL, -- File hash
+    diff_ TEXT NOT NULL, -- Unified DIFF
+    CHECK (updt_ REGEXP '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+-][0-9]{2}:[0-9]{2}'),
+    CHECK (uuid_ REGEXP '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'),
+    FOREIGN KEY (uuid_) REFERENCES meta_ (uuid_),
+    PRIMARY KEY (uuid_, updt_)
 ) STRICT;
 ```
 
