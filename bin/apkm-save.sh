@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Saves metadata and links in `meta` folder and `meta.db`.
+# Saves metadata and links in `meta` folder and `apkm.db`.
 #
 # Usage:
 #

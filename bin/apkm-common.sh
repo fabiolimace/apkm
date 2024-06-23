@@ -17,13 +17,32 @@
 PROGRAM_DIR=`dirname "$0"` # The place where the bash and awk scripts are
 WORKING_DIR=`pwd -P` # The place where the markdown files are
 
+HIST_DIR="$WORKING_DIR/.apkm/hist";
 HTML_DIR="$WORKING_DIR/.apkm/html";
 META_DIR="$WORKING_DIR/.apkm/meta";
-DATABASE="$WORKING_DIR/.apkm/meta.db"
+DATABASE="$WORKING_DIR/.apkm/apkm.db"
 
 CR=$'\r'
 LF=$'\n'
 TAB=$'\t'
+
+NUMB_REGEX="^-?[0-9]+$";
+HASH_REGEX="^[a-f0-9]{40}$";
+DATE_REGEX="^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$"
+UUID_REGEX="^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$";
+
+# prefere busybox for some programs
+if (which busybox >/dev/null); then
+    alias awk='busybox awk';
+    alias basename='busybox basename';
+    alias date='busybox date';
+    alias diff='busybox diff';
+    alias dirname='busybox dirname';
+    alias patch='busybox patch';
+    alias printf='busybox printf';
+    alias sha1sum='busybox sha1sum';
+    alias stat='busybox stat';
+fi;
 
 function validate_program_path {
 
@@ -67,9 +86,10 @@ function validate_working_path {
             exit 1;
         fi;
     done <<EOF
+$WORKING_DIR/.apkm/hist
 $WORKING_DIR/.apkm/html
 $WORKING_DIR/.apkm/meta
-$WORKING_DIR/.apkm/meta.db
+$WORKING_DIR/.apkm/apkm.db
 $WORKING_DIR/.apkm/conf.txt
 EOF
 
@@ -86,7 +106,30 @@ function validate_program_and_working_paths {
 }
 
 function now {
-    date -Iseconds; # ISO-8601: 0000-00-00T00:00:00+00:00
+    date_time;
+}
+
+function date_time {
+    local INPUT=${1};
+    if [[ -n "${INPUT}" ]];
+    then
+        if [[ "${INPUT}" =~ ${DATE_REGEX} ]];
+        then
+            date -d "${INPUT}" +"%F %T";
+        elif [[ "${INPUT}" =~ ${NUMB_REGEX} ]];
+        then
+            date -d @"${INPUT}" +"%F %T";
+        else
+            date -d @0 +"%F %T"; # epoch
+        fi;
+    else
+        date +"%F %T";
+    fi;
+}
+
+function file_updt {
+    local FILE="${1}"
+    date_time $(stat -c %Y "${FILE}");
 }
 
 function file_hash {
@@ -129,20 +172,23 @@ function path {
     # TODO
 }
 
+function make_path {
+    local BASE="${1}"
+    local FILE="${2}"
+    local SUFF="${3}"
+    path_remove_dots "$BASE/$FILE.$SUFF"
+}
+
 function path_meta {
-    local FILE="${1}"
-    local SUFF="${2}"
-    local NAME=`basename "$FILE"`
-    local ROAD=`dirname "$FILE" | sed 's,^/,,'`
-    echo "$META_DIR/$ROAD/$NAME.$SUFF"
+    make_path "${META_DIR}" "${1}" "meta"
+}
+
+function path_hist {
+    make_path "${HIST_DIR}" "${1}" "hist"
 }
 
 function path_html {
-    local FILE="${1}"
-    local SUFF="html"
-    local NAME=`basename "$FILE"`
-    local ROAD=`dirname "$FILE" | sed 's,^/,,'`
-    echo "$HTML_DIR/$ROAD/$NAME.$SUFF"
+    make_path "${HTML_DIR}" "${1}" "html"
 }
 
 # Remove all "./" and "../" from paths,
@@ -156,5 +202,9 @@ function path_remove_dots {
     | awk '{ while ($0 ~ /\/\.\//) { sub(/\/\.\//, "/") }; print }' \
     | awk '{ while ($0 ~ /\/[^\/]+\/\.\.\//) { sub(/\/[^\/]+\/\.\.\//, "/") }; print }' \
     | awk '{ sub(/^\.\//, "") ; print }'
+}
+
+function make_temp {
+    [[ -d "/dev/shm" ]] && mktemp -p /dev/shm || mktemp;
 }
 
