@@ -31,19 +31,6 @@ HASH_REGEX="^[a-f0-9]{40}$";
 DATE_REGEX="^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$"
 UUID_REGEX="^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$";
 
-# prefere busybox for some programs
-if (which busybox >/dev/null); then
-    alias awk='busybox awk';
-    alias basename='busybox basename';
-    alias date='busybox date';
-    alias diff='busybox diff';
-    alias dirname='busybox dirname';
-    alias patch='busybox patch';
-    alias printf='busybox printf';
-    alias sha1sum='busybox sha1sum';
-    alias stat='busybox stat';
-fi;
-
 function validate_program_path {
 
     if [[ ! -f "$PROGRAM_DIR/apkm-init.sh" ]];

@@ -23,13 +23,43 @@ then
     exit 1;
 fi;
 
+# if patch is a symlink or alias for busybox, remove the empty old file
+BUSYBOX_WORKAROUND=$(patch --help 2>&1 | head -n 1 | grep -i busybox -c);
+
+function busybox_patch {
+
+    local TEMP_FILE="${1}"
+    local TEMP_DIFF="${2}"
+
+    # Workaround for busybox: remove the empty old file before calling the applet "patch".
+    # Summary of the only issue I found: https://github.com/bazelbuild/rules_go/issues/2042
+    # 1.  "can't open 'BUILD.bazel': File exists"
+    # 2.  "I suspect patch on Alpine is following POSIX semantics and requires the -E flag."
+    # 3.  "-E  --remove-empty-files Remove output files that are empty after patching."
+    # 4.  Busybox don't have the option '-E', which is a GNU extension, i.e. not POSIX.
+    if [[ ! -s "${TEMP_FILE}" ]];
+    then
+        rm "${TEMP_FILE}"
+    fi;
+    
+    patch -u "${TEMP_FILE}" "${TEMP_DIFF}" > /dev/null;
+    
+    touch "${TEMP_FILE}" # undo the workaround
+}
+
 function apply_patch {
 
     local TEMP_FILE="${1}"
     local TEMP_DIFF="${2}"
     local TEMP_HASH="${3}"
     
-    patch -s -u "${TEMP_FILE}" "${TEMP_DIFF}";
+    
+    if [[ $BUSYBOX_WORKAROUND -eq 1 ]];
+    then
+        busybox_patch "${TEMP_FILE}" "${TEMP_DIFF}";
+    else
+        patch -u "${TEMP_FILE}" "${TEMP_DIFF}" > /dev/null;
+    fi;
     
     if [[ -n "${TEMP_HASH}" ]];
     then
@@ -91,7 +121,7 @@ function save_hist_fs {
     
     if [[ ! -f "${HIST}" ]];
     then
-        echo "#% file=${FILE}" >> "${HIST}"
+        echo "#% path=${FILE}" >> "${HIST}"
         echo "#% uuid=${UUID}" >> "${HIST}"
     fi;
     
