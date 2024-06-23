@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Saves history in `hist` folder and `hist.db`.
+# Saves history in `hist` folder and `apkm.db`.
 #
 # Usage:
 #
@@ -15,60 +15,94 @@
 source "`dirname "$0"`/apkm-common.sh" || exit 1;
 validate_program_and_working_paths || exit 1;
 
+FILE="${1}"
+
+if [[ ! -f "$FILE" ]];
+then
+    echo "File not found: '$FILE'" 1>&2
+    exit 1;
+fi;
+
+function apply_patch {
+
+    local TEMP_FILE="${1}"
+    local TEMP_DIFF="${2}"
+    local TEMP_HASH="${3}"
+    
+    patch -s -u "${TEMP_FILE}" "${TEMP_DIFF}";
+    
+    if [[ -n "${TEMP_HASH}" ]];
+    then
+        if [[ "`file_hash "${TEMP_FILE}"`" != "${TEMP_HASH}" ]];
+        then
+            echo "Error while replaying history: hashes don't match." > /dev/stderr;
+            rm -f "${TEMP_FILE}" "${TEMP_DIFF}";
+            exit 1;
+        fi;
+    fi;
+}
+
 function file_diff {
+
     local FILE="${1}"
     
-    # TODO: generate a real diff
-    cat <<EOF
---- lao	2002-02-21 23:30:39.942229878 -0800
-+++ tzu	2002-02-21 23:30:50.442260588 -0800
-@@ -1,7 +1,6 @@
--The Way that can be told of is not the eternal Way;
--The name that can be named is not the eternal name.
- The Nameless is the origin of Heaven and Earth;
--The Named is the mother of all things.
-+The named is the mother of all things.
-+
- Therefore let there always be non-being,
-   so we may see their subtlety,
- And let there always be being,
-@@ -9,3 +8,6 @@
- The two are the same,
- But after they are produced,
-   they have different names.
-+They both may be called deep and profound.
-+Deeper and more profound,
-+The door of all subtleties!
-EOF
+    local HIST="`path_hist "$FILE"`"
+    
+    local TEMP_HASH="";
+    local TEMP_DIFF="`make_temp`"
+    local TEMP_FILE="`make_temp`"
+    
+    while IFS= read -r line; do
+    
+        if [[ $line =~ ^#% ]];  # file header
+        then
+            continue;
+        elif [[ $line =~ ^#@ ]]; # diff header
+        then
+            apply_patch "${TEMP_FILE}" "${TEMP_DIFF}" "${TEMP_HASH}";
+            
+            TEMP_HASH="`echo "${line}" | sed -E 's/^#@ *//' | awk 'BEGIN { FS="'"${TAB}"'" } {print $2}'`";
+            cat /dev/null > "${TEMP_DIFF}";
+            continue;
+        fi;
 
+        echo "${line}" >> "${TEMP_DIFF}";
+    
+    done < <(cat "${HIST}")
+    
+    apply_patch "${TEMP_FILE}" "${TEMP_DIFF}" "${TEMP_HASH}";
+    
+    cat "${TEMP_FILE}" | diff -u /dev/stdin "${FILE}" && rm -f "${TEMP_FILE}" "${TEMP_DIFF}";
+}
+
+function last_hash {
+    local HIST="${1}"
+    tac "${HIST}" | awk 'BEGIN { FS="'"${TAB}"'" } /^#@/ { print $2; exit 0; }';
 }
 
 function save_hist_fs {
 
     local FILE="${1}"
     local UUID="${2}"
+    local UPDT="${3}"
+    local HASH="${4}"
     
-    local HIST=`path_meta "$FILE" "hist"`
-    mkdir --parents "`dirname "$HIST"`"
-    
-    local UPDT # Update date
-    local HASH # File hash
-    local DIFF # Unified DIFF
-
-    UPDT="`now`"
-    HASH="`file_hash "$FILE"`"
-    DIFF="`file_diff "$FILE"`" # FIXME: escape doublequotes
+    local HIST="`path_hist "$FILE"`"
     
     if [[ ! -f "${HIST}" ]];
     then
-        echo "#% path=${FILE}" >> "${HIST}"
+        echo "#% file=${FILE}" >> "${HIST}"
         echo "#% uuid=${UUID}" >> "${HIST}"
-        echo >> "${HIST}"
     fi;
     
-    cat >> "$HIST" <<EOF
+    if [[ "${HASH}" == "`last_hash "${HIST}"`" ]];
+    then
+        return;
+    fi;
+    
+    cat >> "${HIST}" <<EOF
 #@ ${UPDT}${TAB}${HASH}
-${DIFF}
+$(file_diff "$FILE")
 EOF
 
 }
@@ -77,46 +111,22 @@ function save_hist_db {
 
     local FILE="${1}"
     local UUID="${2}"
+    local UPDT="${3}"
+    local HASH="${4}"
     
-    local HIST=`path_meta "$FILE" "hist"`
-
-    local UPDT # Update date
-    local HASH # File hash
-    local DIFF # Unified DIFF
-    
-    # reading it backwards
-    while read -s line; do
-    
-        if [[ "$line" =~ ^#@ ]];
-        then
-            # found the last diff header; time to get its values and break the loop
-            UPDT="`echo "$line" | sed 's/^#@ *//' | awk 'BEGIN { FS="'"$TAB"'" } { print $1 }'`"
-            HASH="`echo "$line" | sed 's/^#@ *//' | awk 'BEGIN { FS="'"$TAB"'" } { print $2 }'`"
-            break;
-        else
-            DIFF="${line}${LF}${DIFF}" # FIXME: escape singlequotes
-        fi;
-        
-    done < <(tac "${HIST}")
-    
-    if [[ -z "$UPDT" || -z "$HASH" ]];
-    then
-        echo "Error while saving history: '$FILE'" 1>&2
-        exit 1;
-    fi;
-    
-    echo "INSERT OR REPLACE INTO hist_ values ('$UUID', '$UPDT', '$HASH', '$DIFF');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
+    echo "INSERT OR REPLACE INTO hist_ values ('$UUID', '$UPDT', '$HASH');" | sqlite3 "$DATABASE";
 }
 
-FILE="${1}"
-UUID="`path_uuid "$FILE"`"
+function save_hist {
 
-if [[ ! -f "$FILE" ]];
-then
-    echo "File not found: '$FILE'" 1>&2
-    exit 1;
-fi;
+    local FILE="${1}"
+    local UUID="`path_uuid "$FILE"`"
+    local UPDT="`file_updt "$FILE"`"
+    local HASH="`file_hash "$FILE"`"
+    
+    save_hist_fs "$FILE" "$UUID" "$UPDT" "$HASH"
+    save_hist_db "$FILE" "$UUID" "$UPDT" "$HASH"
+}
 
-save_hist_fs "$FILE" "$UUID"
-save_hist_db "$FILE" "$UUID"
+save_hist "$FILE"
 
