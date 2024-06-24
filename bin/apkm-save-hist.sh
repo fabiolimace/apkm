@@ -7,9 +7,11 @@
 #
 #     apwm-save-hist.sh FILE
 #
-# Notes:
-# 1. File headers start with '#%'.
-# 2. Diff headers start with '#@'.
+# History file structure:
+#
+#     1. History header '##'.
+#     2. Start of diff '#@'.
+#     3. End of diff '#&'.
 # 
 
 source "`dirname "$0"`/apkm-common.sh" || exit 1;
@@ -23,86 +25,9 @@ then
     exit 1;
 fi;
 
-# if patch is a symlink or alias for busybox, remove the empty old file
-BUSYBOX_WORKAROUND=$(patch --help 2>&1 | head -n 1 | grep -i busybox -c);
-
-function busybox_patch {
-
-    local TEMP_FILE="${1}"
-    local TEMP_DIFF="${2}"
-
-    # Workaround for busybox: remove the empty old file before calling the applet "patch".
-    # Summary of the only issue I found: https://github.com/bazelbuild/rules_go/issues/2042
-    # 1.  "can't open 'BUILD.bazel': File exists"
-    # 2.  "I suspect patch on Alpine is following POSIX semantics and requires the -E flag."
-    # 3.  "-E  --remove-empty-files Remove output files that are empty after patching."
-    # 4.  Busybox don't have the option '-E', which is a GNU extension, i.e. not POSIX.
-    if [[ ! -s "${TEMP_FILE}" ]];
-    then
-        rm "${TEMP_FILE}"
-    fi;
-    
-    patch -u "${TEMP_FILE}" "${TEMP_DIFF}" > /dev/null;
-    
-    touch "${TEMP_FILE}" # undo the workaround
-}
-
-function apply_patch {
-
-    local TEMP_FILE="${1}"
-    local TEMP_DIFF="${2}"
-    local TEMP_HASH="${3}"
-    
-    
-    if [[ $BUSYBOX_WORKAROUND -eq 1 ]];
-    then
-        busybox_patch "${TEMP_FILE}" "${TEMP_DIFF}";
-    else
-        patch -u "${TEMP_FILE}" "${TEMP_DIFF}" > /dev/null;
-    fi;
-    
-    if [[ -n "${TEMP_HASH}" ]];
-    then
-        if [[ "`file_hash "${TEMP_FILE}"`" != "${TEMP_HASH}" ]];
-        then
-            echo "Error while replaying history: hashes don't match." > /dev/stderr;
-            rm -f "${TEMP_FILE}" "${TEMP_DIFF}";
-            exit 1;
-        fi;
-    fi;
-}
-
 function file_diff {
 
-    local FILE="${1}"
-    
-    local HIST="`path_hist "$FILE"`"
-    
-    local TEMP_HASH="";
-    local TEMP_DIFF="`make_temp`"
-    local TEMP_FILE="`make_temp`"
-    
-    while IFS= read -r line; do
-    
-        if [[ $line =~ ^#% ]];  # file header
-        then
-            continue;
-        elif [[ $line =~ ^#@ ]]; # diff header
-        then
-            apply_patch "${TEMP_FILE}" "${TEMP_DIFF}" "${TEMP_HASH}";
-            
-            TEMP_HASH="`echo "${line}" | sed -E 's/^#@ *//' | awk 'BEGIN { FS="'"${TAB}"'" } {print $2}'`";
-            cat /dev/null > "${TEMP_DIFF}";
-            continue;
-        fi;
-
-        echo "${line}" >> "${TEMP_DIFF}";
-    
-    done < <(cat "${HIST}")
-    
-    apply_patch "${TEMP_FILE}" "${TEMP_DIFF}" "${TEMP_HASH}";
-    
-    cat "${TEMP_FILE}" | diff -u /dev/stdin "${FILE}" && rm -f "${TEMP_FILE}" "${TEMP_DIFF}";
+    "$PROGRAM_DIR/apkm-load-hist.sh" "$FILE" | diff -u /dev/stdin "${FILE}";
 }
 
 function last_hash {
@@ -121,8 +46,8 @@ function save_hist_fs {
     
     if [[ ! -f "${HIST}" ]];
     then
-        echo "#% path=${FILE}" >> "${HIST}"
-        echo "#% uuid=${UUID}" >> "${HIST}"
+        echo "## path=${FILE}" >> "${HIST}"
+        echo "## uuid=${UUID}" >> "${HIST}"
     fi;
     
     if [[ "${HASH}" == "`last_hash "${HIST}"`" ]];
@@ -133,6 +58,7 @@ function save_hist_fs {
     cat >> "${HIST}" <<EOF
 #@ ${UPDT}${TAB}${HASH}
 $(file_diff "$FILE")
+#% ${UPDT}${TAB}${HASH}
 EOF
 
 }

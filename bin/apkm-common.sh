@@ -96,6 +96,11 @@ function now {
     date_time;
 }
 
+function unix_secs {
+    local INPUT=${1};
+    date -d "${INPUT}" +%s;
+}
+
 function date_time {
     local INPUT=${1};
     if [[ -n "${INPUT}" ]];
