@@ -27,7 +27,7 @@ fi;
 
 function last_hash {
     local HIST="${1}"
-    tac "${HIST}" | awk 'BEGIN { FS="'"${TAB}"'" } /^'"${HIST_DIFF_END}"'/ { print $2; exit 0; }';
+    tac "${HIST}" | awk 'BEGIN { FS="'"${TAB}"'" } /^'"${HIST_DIFF_START}"'/ { print $2; exit 0; }';
 }
 
 function file_diff {
@@ -57,7 +57,7 @@ function save_hist_fs {
     cat >> "${HIST}" <<EOF
 ${HIST_DIFF_START} ${UPDT}${TAB}${HASH}
 $(file_diff "$FILE")
-${HIST_DIFF_END} ${UPDT}${TAB}${HASH}
+${HIST_DIFF_END}
 EOF
 
 }
