@@ -9,9 +9,9 @@
 #
 # History file structure:
 #
-#     1. History header '##'.
+#     1. History file info '##'.
 #     2. Start of diff '#@'.
-#     3. End of diff '#&'.
+#     3. End of diff '#%'.
 # 
 
 source "`dirname "$0"`/apkm-common.sh" || exit 1;
@@ -25,14 +25,13 @@ then
     exit 1;
 fi;
 
-function file_diff {
-
-    "$PROGRAM_DIR/apkm-load-hist.sh" "$FILE" | diff -u /dev/stdin "${FILE}";
-}
-
 function last_hash {
     local HIST="${1}"
-    tac "${HIST}" | awk 'BEGIN { FS="'"${TAB}"'" } /^#@/ { print $2; exit 0; }';
+    tac "${HIST}" | awk 'BEGIN { FS="'"${TAB}"'" } /^'"${HIST_DIFF_END}"'/ { print $2; exit 0; }';
+}
+
+function file_diff {
+    "$PROGRAM_DIR/apkm-load-hist.sh" "$FILE" | diff -u /dev/stdin "${FILE}";
 }
 
 function save_hist_fs {
@@ -46,8 +45,8 @@ function save_hist_fs {
     
     if [[ ! -f "${HIST}" ]];
     then
-        echo "## path=${FILE}" >> "${HIST}"
-        echo "## uuid=${UUID}" >> "${HIST}"
+        echo "$HIST_FILE_INF0 path=${FILE}" >> "${HIST}"
+        echo "$HIST_FILE_INF0 uuid=${UUID}" >> "${HIST}"
     fi;
     
     if [[ "${HASH}" == "`last_hash "${HIST}"`" ]];
@@ -56,9 +55,9 @@ function save_hist_fs {
     fi;
     
     cat >> "${HIST}" <<EOF
-#@ ${UPDT}${TAB}${HASH}
+${HIST_DIFF_START} ${UPDT}${TAB}${HASH}
 $(file_diff "$FILE")
-#% ${UPDT}${TAB}${HASH}
+${HIST_DIFF_END} ${UPDT}${TAB}${HASH}
 EOF
 
 }

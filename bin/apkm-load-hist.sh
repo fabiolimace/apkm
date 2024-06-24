@@ -17,7 +17,7 @@
 # 
 # History file structure:
 #
-#     1. History header '##'.
+#     1. History file info '##'.
 #     2. Start of diff '#@'.
 #     3. End of diff '#&'.
 # 
@@ -99,6 +99,12 @@ function load_hist {
     
     local HIST="`path_hist "$FILE"`"
     
+    if [[ ! "${HIST}" ]];
+    then
+        echo "No history for file '$FILE'." > /dev/stderr;
+        exit 1;
+    fi;
+    
     local TEMP_DATE="";
     local TEMP_HASH="";
     local TEMP_DIFF="`make_temp`"
@@ -106,41 +112,47 @@ function load_hist {
     
     while IFS= read -r line; do
     
-        if [[ $line =~ ^## ]];  # history header
+        if [[ $line =~ ^$HIST_FILE_INF0 ]];
         then
+            # ignore
             continue;
-        elif [[ $line =~ ^#@ ]]; # start of diff
+        elif [[ $line =~ ^$HIST_DIFF_START ]];
         then
         
-            TEMP_DATE="`echo "${line}" | sed -E 's/^#@ *//' | awk 'BEGIN { FS="'"${TAB}"'" } {print $1}'`";
-            TEMP_HASH="`echo "${line}" | sed -E 's/^#@ *//' | awk 'BEGIN { FS="'"${TAB}"'" } {print $2}'`";
             cat /dev/null > "${TEMP_DIFF}";
             
-            if [[ "${DATE}" =~ ^\<[0-9]{4}-[0-9]{2}-[0-9]{2} ]];
+            TEMP_DATE="`echo "${line}" \
+                | sed -E "s/^$HIST_DIFF_START *//" \
+                | awk 'BEGIN { FS="'"${TAB}"'" } {print $1}'`";
+            TEMP_HASH="`echo "${line}" \
+                | sed -E "s/^$HIST_DIFF_START *//" \
+                | awk 'BEGIN { FS="'"${TAB}"'" } {print $2}'`";
+            
+            continue;
+        elif [[ $line =~ ^$HIST_DIFF_END ]];
+        then
+        
+            if [[ -n "${DATE}" && "${DATE}" =~ ^\< ]];
             then
-                if [[ `unix_secs "${TEMP_DATE}"` -gt `unix_secs "${DATE/</}"` ]];
+                if [[ `unix_secs "${TEMP_DATE}"` -ge `unix_secs "${DATE/</}"` ]];
                 then
                     break;
                 fi;
             fi;
             
-            continue;
-        elif [[ $line =~ ^#% ]]; # end of diff
-        then
-            
             apply_patch "${TEMP_FILE}" "${TEMP_DIFF}" "${TEMP_HASH}";
             
-            if [[ "${TEMP_HASH}" =~ ^"${HASH}" ]];
+            if [[ -n "${HASH}" && "${TEMP_HASH}" =~ ^"${HASH}" ]];
             then
                 break;
             fi;
             
-            if [[ "${TEMP_DATE}" == "${DATE}" ]];
+            if [[ -n "${DATE}" && "${TEMP_DATE}" == "${DATE}" ]];
             then
                 break;
             fi;
             
-            if [[ "${DATE}" =~ ^\>[0-9]{4}-[0-9]{2}-[0-9]{2} ]];
+            if [[ -n "${DATE}" && "${DATE}" =~ ^\> ]];
             then
                 if [[ `unix_secs "${TEMP_DATE}"` -gt `unix_secs "${DATE/>/}"` ]];
                 then
@@ -148,6 +160,7 @@ function load_hist {
                 fi;
             fi;
             
+            continue;
         fi;
 
         echo "${line}" >> "${TEMP_DIFF}";

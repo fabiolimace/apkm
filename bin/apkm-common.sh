@@ -26,6 +26,10 @@ CR=$'\r'
 LF=$'\n'
 TAB=$'\t'
 
+HIST_FILE_INF0="##"
+HIST_DIFF_START="#@"
+HIST_DIFF_END="#%"
+
 NUMB_REGEX="^-?[0-9]+$";
 HASH_REGEX="^[a-f0-9]{40}$";
 DATE_REGEX="^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$"
