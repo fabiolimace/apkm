@@ -8,6 +8,14 @@
 #     apwm-save-meta.sh FILE
 #
 
+FILE="${1}"
+
+if [[ ! -f "$FILE" ]];
+then
+    echo "File not found: '$FILE'" 1>&2
+    exit 1;
+fi;
+
 source "`dirname "$0"`/apkm-common.sh" || exit 1;
 validate_program_and_working_paths || exit 1;
 
@@ -95,14 +103,6 @@ function save_meta_db {
     
     echo "INSERT OR REPLACE INTO meta_ values ('$UUID', '$ROAD', '$NAME', '$HASH', '$CRDT', '$UPDT', '$TAGS');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
 }
-
-FILE="${1}"
-
-if [[ ! -f "$FILE" ]];
-then
-    echo "File not found: '$FILE'" 1>&2
-    exit 1;
-fi;
 
 save_meta_fs "$FILE"
 save_meta_db "$FILE"

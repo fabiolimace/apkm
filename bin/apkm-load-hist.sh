@@ -22,9 +22,6 @@
 #     3. End of diff '#&'.
 # 
 
-source "`dirname "$0"`/apkm-common.sh" || exit 1;
-validate_program_and_working_paths || exit 1;
-
 FILE="${1}"
 DATE="${2}"
 HASH="${2}" # yeah, 2.
@@ -34,6 +31,9 @@ then
     echo "File not found: '$FILE'" 1>&2
     exit 1;
 fi;
+
+source "`dirname "$0"`/apkm-common.sh" || exit 1;
+validate_program_and_working_paths || exit 1;
 
 # if patch is a symlink or alias for busybox patch applet
 BUSYBOX=$(patch --help 2>&1 | head -n 1 | grep -i busybox -c);

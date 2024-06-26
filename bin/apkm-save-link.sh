@@ -8,6 +8,14 @@
 #     apwm-save-link.sh FILE
 #
 
+FILE="${1}"
+
+if [[ ! -f "$FILE" ]];
+then
+    echo "File not found: '$FILE'" 1>&2
+    exit 1;
+fi;
+
 source "`dirname "$0"`/apkm-common.sh" || exit 1;
 validate_program_and_working_paths || exit 1;
 
@@ -100,14 +108,6 @@ function normalize_href {
     
     echo "$NORM_HREF";
 }
-
-FILE="${1}"
-
-if [[ ! -f "$FILE" ]];
-then
-    echo "File not found: '$FILE'" 1>&2
-    exit 1;
-fi;
 
 save_link_fs "$FILE"
 save_link_db "$FILE"

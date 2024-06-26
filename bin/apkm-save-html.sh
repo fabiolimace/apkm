@@ -8,6 +8,14 @@
 #     apwm-save-html.sh FILE
 #
 
+FILE="${1}"
+
+if [[ ! -f "$FILE" ]];
+then
+    echo "File not found: '$FILE'" 1>&2
+    exit 1;
+fi;
+
 source "`dirname "$0"`/apkm-common.sh" || exit 1;
 validate_program_and_working_paths || exit 1;
 
@@ -17,14 +25,6 @@ function save_html {
     mkdir --parents "`dirname "$HTML"`"
     "$PROGRAM_DIR/apkm-html.awk" "$FILE" > "$HTML"
 }
-
-FILE="${1}"
-
-if [[ ! -f "$FILE" ]];
-then
-    echo "File not found: '$FILE'" 1>&2
-    exit 1;
-fi;
 
 save_html "$FILE"
 
