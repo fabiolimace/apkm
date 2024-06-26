@@ -56,7 +56,7 @@ $PROGRAM_DIR/apkm-tags.awk
 $PROGRAM_DIR/apkm-httpd.sh
 $PROGRAM_DIR/apkm-save.sh
 $PROGRAM_DIR/apkm-save-html.sh
-$PROGRAM_DIR/apkm-save-links.sh
+$PROGRAM_DIR/apkm-save-link.sh
 $PROGRAM_DIR/apkm-save-meta.sh
 $PROGRAM_DIR/apkm-save-hist.sh
 EOF

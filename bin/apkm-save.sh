@@ -21,7 +21,7 @@ while read -s line; do
     "$PROGRAM_DIR/apkm-save-hist.sh" "$FILE";
     "$PROGRAM_DIR/apkm-save-html.sh" "$FILE";
     "$PROGRAM_DIR/apkm-save-meta.sh" "$FILE";
-    "$PROGRAM_DIR/apkm-save-links.sh" "$FILE";
+    "$PROGRAM_DIR/apkm-save-link.sh" "$FILE";
 
 done < <(cd "$WORKING_DIR"; find . -type f -regex "$FIND_REGEX" | grep -v "$IGNORE_REGEX");
 

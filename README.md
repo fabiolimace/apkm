@@ -141,7 +141,7 @@ This is a list of features to be implemented:
 * A simple script to serve the HTML files in `.apkm/html` in the local interface at a specific port.
 * A script to generate metadata about markdown texts, placing the output into .apkm/meta
     - The metadata will be saved as files in .apkm/meta.
-    - The metadata will also be saved in a SQLite database in .apkm/meta.db.
+    - The metadata will also be saved in a SQLite database in .apkm/apkm.db.
 
 Goals:
 * Make it Busybox `awk` and GNU's `gawk`

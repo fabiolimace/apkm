@@ -5,20 +5,20 @@
 #
 # Usage:
 #
-#     apwm-save-links.sh FILE
+#     apwm-save-link.sh FILE
 #
 
 source "`dirname "$0"`/apkm-common.sh" || exit 1;
 validate_program_and_working_paths || exit 1;
 
-function save_links_fs {
+function save_link_fs {
     local FILE="${1}"
     local META=`path_meta "$FILE" "link"`
     mkdir --parents "`dirname "$META"`"
     "$PROGRAM_DIR/apkm-links.awk" "$FILE" > "$META"
 }
 
-function save_links_db {
+function save_link_db {
 
     local FILE="${1}"
     local META=`path_meta "$FILE" "link"`
@@ -109,7 +109,7 @@ then
     exit 1;
 fi;
 
-save_links_fs "$FILE"
-save_links_db "$FILE"
+save_link_fs "$FILE"
+save_link_db "$FILE"
 
 
