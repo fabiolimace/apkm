@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Initializes the APKM in the current directory.
@@ -22,19 +22,20 @@
 # Where DIRECTORY is where this init script was executed.
 #
 
-source "`dirname "$0"`/apkm-common.sh" || exit 1;
-validate_program_path || exit 1;
+. "`dirname "$0"`/apkm-common.sh";
 
-function apkm_init_fs {
+apkm_init_fs() {
     
     echo "----------------------"
     echo "Init directory"
     echo "----------------------"
-   
-    mkdir --verbose --parents "$WORKING_DIR/.apkm"
-    mkdir --verbose --parents "$WORKING_DIR/.apkm/hist"
-    mkdir --verbose --parents "$WORKING_DIR/.apkm/html"
-    mkdir --verbose --parents "$WORKING_DIR/.apkm/meta"
+    echo "mkdir -p \"$WORKING_DIR/.apkm\""
+    
+    mkdir -p "$WORKING_DIR/.apkm"
+    mkdir -p "$WORKING_DIR/.apkm/hist"
+    mkdir -p "$WORKING_DIR/.apkm/html"
+    mkdir -p "$WORKING_DIR/.apkm/meta"
+    mkdir -p "$WORKING_DIR/.apkm/link"
     
 cat > "$WORKING_DIR/.apkm/conf.txt" <<EOF
 busybox.httpd.port=127.0.0.1:9000
@@ -42,7 +43,7 @@ EOF
 
 }
 
-function apkm_init_db {
+apkm_init_db() {
 
     echo "----------------------"
     echo "Init SQLite"
@@ -94,7 +95,7 @@ EOF
 
 }
 
-function apkm_init_git {
+apkm_init_git() {
     
     echo "----------------------"
     echo "Init GIT"
@@ -114,27 +115,30 @@ EOF
 
 }
 
-if [[ ! -d "$WORKING_DIR" ]];
+if [ ! -d "$WORKING_DIR" ];
 then
     echo "Base directory not found."
     exit 1;
 fi;
 
-if [[ -d "$WORKING_DIR/.apkm" ]];
+if [ -d "$WORKING_DIR/.apkm" ];
 then
     echo "APKM already initialized in this directory."
     exit 1;
 fi;
 
 # TODO: remove it after file history is ready
-if [[ -d "$WORKING_DIR/.git" ]];
+if [ -d "$WORKING_DIR/.git" ];
 then
     echo "GIT already initialized in this directory." 1>&2;
     exit 1;
 fi;
 
-apkm_init_fs;
-apkm_init_db;
-apkm_init_git;
+main() {
+    apkm_init_fs;
+    apkm_init_db;
+    apkm_init_git;
+}
 
+main;
 

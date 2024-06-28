@@ -1,30 +1,24 @@
-#!/bin/bash
+#!/bin/sh
 
 #
-# Saves HTML in `meta/html` folder.
+# Saves HTML in `html` folder.
 #
 # Usage:
 #
 #     apwm-save-html.sh FILE
 #
 
-FILE="${1}"
+. "`dirname "$0"`/apkm-common.sh";
 
-if [[ ! -f "$FILE" ]];
-then
-    echo "File not found: '$FILE'" 1>&2
-    exit 1;
-fi;
+file="${1}"
+require_file "${file}";
 
-source "`dirname "$0"`/apkm-common.sh" || exit 1;
-validate_program_and_working_paths || exit 1;
-
-function save_html {
-    local FILE="${1}"
-    local HTML=`path_html "$FILE"`
-    mkdir --parents "`dirname "$HTML"`"
-    "$PROGRAM_DIR/apkm-html.awk" "$FILE" > "$HTML"
+main() {
+    local file="${1}"
+    local html=`path_html "${file}"`
+    mkdir -p "`dirname "${html}"`"
+    "$PROGRAM_DIR/apkm-html.awk" "${file}" > "${html}"
 }
 
-save_html "$FILE"
+main "${file}";
 

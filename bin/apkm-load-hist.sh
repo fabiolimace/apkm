@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Load a file version from file history.
@@ -9,11 +9,12 @@
 #
 # Returns the first version that matches DATE or HASH, otherwise returns the latest version.
 #
-# Hints:
+# Search by date or hash:
 # 
-#     1. You can search using the leading chars of HASH, e.g: "eeb180fa".
-#     2. You can use ">" to load the first version whose date is greater than a date, e.g: ">2024-06-24"
-#     2. You can use "<" to load the last version whose date is lower than a date, e.g: "<2024-06-24"
+#    - Use leading chars of a specific hash, e.g: "eeb180fd0436c2edcd05d2" or "ee".
+#    - Use a date string that `date` command can parse, e.g: '2006-08-14 02:34:56'.
+#    - Use ">" to search for the first date after a given date, e.g: ">2024-06-24".
+#    - Use "<" to search for the last date before a given date, e.g: "<2024-06-24".
 # 
 # History file structure:
 #
@@ -22,26 +23,18 @@
 #     3. End of diff '#&'.
 # 
 
-FILE="${1}"
-DATE="${2}"
-HASH="${2}" # yeah, 2.
+. "`dirname "$0"`/apkm-common.sh";
 
-if [[ ! -f "$FILE" ]];
-then
-    echo "File not found: '$FILE'" 1>&2
-    exit 1;
-fi;
+file="${1}"
+date="${2}"
+hash="${2}" # yes, 2 again
 
-source "`dirname "$0"`/apkm-common.sh" || exit 1;
-validate_program_and_working_paths || exit 1;
+require_file "${file}";
 
-# if patch is a symlink or alias for busybox patch applet
-BUSYBOX=$(patch --help 2>&1 | head -n 1 | grep -i busybox -c);
+busybox_patch() {
 
-function busybox_patch {
-
-    local TEMP_FILE="${1}"
-    local TEMP_DIFF="${2}"
+    local temp_file="${1}"
+    local temp_diff="${2}"
 
     # Workaround for busybox: remove the empty old file before calling the applet "patch".
     # Summary of the only issue I found: https://github.com/bazelbuild/rules_go/issues/2042
@@ -49,126 +42,109 @@ function busybox_patch {
     # 2.  "I suspect patch on Alpine is following POSIX semantics and requires the -E flag."
     # 3.  "-E  --remove-empty-files Remove output files that are empty after patching."
     # 4.  Busybox don't have the option '-E', which is a GNU extension, i.e. not POSIX.
-    if [[ ! -s "${TEMP_FILE}" ]];
-    then
-        rm "${TEMP_FILE}"
+    if [ ! -s "${temp_file}" ]; then
+        rm "${temp_file}"
     fi;
     
-    patch -u "${TEMP_FILE}" "${TEMP_DIFF}" > /dev/null;
+    patch -u "${temp_file}" "${temp_diff}" > /dev/null;
     
-    touch "${TEMP_FILE}" # undo the workaround
+    touch "${temp_file}" # undo the workaround
 }
 
-function gnu_patch {
+gnu_patch() {
 
-    local TEMP_FILE="${1}"
-    local TEMP_DIFF="${2}"
+    local temp_file="${1}"
+    local temp_diff="${2}"
     
-    patch -u "${TEMP_FILE}" "${TEMP_DIFF}" > /dev/null;
+    patch -u "${temp_file}" "${temp_diff}" > /dev/null;
 }
 
-function apply_patch {
+apply_patch() {
 
-    local TEMP_FILE="${1}"
-    local TEMP_DIFF="${2}"
-    local TEMP_HASH="${3}"
+    local temp_file="${1}"
+    local temp_diff="${2}"
+    local temp_hash="${3}"
     
-    if [[ $BUSYBOX -eq 1 ]];
-    then
-        busybox_patch "${TEMP_FILE}" "${TEMP_DIFF}";
+    if symlinked_busybox "patch"; then
+        busybox_patch "${temp_file}" "${temp_diff}";
     else
-        gnu_patch "${TEMP_FILE}" "${TEMP_DIFF}";
+        gnu_patch "${temp_file}" "${temp_diff}";
     fi;
     
-    if [[ -n "${TEMP_HASH}" ]];
-    then
-        if [[ "`file_hash "${TEMP_FILE}"`" != "${TEMP_HASH}" ]];
-        then
-            echo "Error while loading history: hashes don't match." > /dev/stderr;
-            rm -f "${TEMP_FILE}" "${TEMP_DIFF}";
+    if [ -n "${temp_hash}" ]; then
+        if [ "`file_hash "${temp_file}"`" != "${temp_hash}" ]; then
+            echo "Error while loading history: intermediate hashes don't match." > /dev/stderr;
+            rm -f "${temp_file}" "${temp_diff}";
             exit 1;
         fi;
     fi;
 }
 
-function load_hist {
+main() {
 
-    local FILE="${1}"
-    local DATE="${2}"
-    local HASH="${3}"
+    local file="${1}"
+    local date="${2}"
+    local hash="${3}"
     
-    local HIST="`path_hist "$FILE"`"
+    local hist="`path_hist "${file}"`"
     
-    if [[ ! "${HIST}" ]];
-    then
-        echo "No history for file '$FILE'." > /dev/stderr;
-        exit 1;
-    fi;
+    require_file "${hist}" "No history for file '${file}'."
     
-    local TEMP_DATE="";
-    local TEMP_HASH="";
-    local TEMP_DIFF="`make_temp`"
-    local TEMP_FILE="`make_temp`"
+    local temp_date="";
+    local temp_hash="";
+    local temp_diff="`make_temp`"
+    local temp_file="`make_temp`"
     
-    while IFS= read -r line; do
+    cat "${hist}" | while IFS= read -r line; do
     
-        if [[ $line =~ ^$HIST_FILE_INF0 ]];
-        then
+        if match "${line}" "^${HIST_FILE_INFO}"; then
             # ignore
             continue;
-        elif [[ $line =~ ^$HIST_DIFF_START ]];
-        then
+        elif match "${line}" "^${HIST_DIFF_START}"; then
         
-            cat /dev/null > "${TEMP_DIFF}";
+            cat /dev/null > "${temp_diff}";
             
-            TEMP_DATE="`echo "${line}" \
+            temp_date="`echo "${line}" \
                 | sed -E "s/^$HIST_DIFF_START *//" \
-                | awk 'BEGIN { FS="'"${TAB}"'" } {print $1}'`";
-            TEMP_HASH="`echo "${line}" \
+                | awk 'BEGIN { FS="'"${HT}"'" } {print $1}'`";
+            temp_hash="`echo "${line}" \
                 | sed -E "s/^$HIST_DIFF_START *//" \
-                | awk 'BEGIN { FS="'"${TAB}"'" } {print $2}'`";
-            
+                | awk 'BEGIN { FS="'"${HT}"'" } {print $2}'`";
+                
             continue;
-        elif [[ $line =~ ^$HIST_DIFF_END ]];
-        then
+        elif match "${line}" "^${HIST_DIFF_END}"; then
         
-            if [[ -n "${DATE}" && "${DATE}" =~ ^\< ]];
-            then
-                if [[ `unix_secs "${TEMP_DATE}"` -ge `unix_secs "${DATE/</}"` ]];
-                then
+            if test -n "${date}" && match "${date}" "^<"; then
+                if [ `unix_secs "${temp_date}"` -ge `unix_secs "${date#\<}"` ]; then
                     break;
                 fi;
             fi;
             
-            apply_patch "${TEMP_FILE}" "${TEMP_DIFF}" "${TEMP_HASH}";
+            apply_patch "${temp_file}" "${temp_diff}" "${temp_hash}";
             
-            if [[ -n "${HASH}" && "${TEMP_HASH}" =~ ^"${HASH}" ]];
-            then
-                break;
-            fi;
-            
-            if [[ -n "${DATE}" && "${TEMP_DATE}" == "${DATE}" ]];
-            then
-                break;
-            fi;
-            
-            if [[ -n "${DATE}" && "${DATE}" =~ ^\> ]];
-            then
-                if [[ `unix_secs "${TEMP_DATE}"` -gt `unix_secs "${DATE/>/}"` ]];
-                then
+            if test -n "${date}" && match "${date}" "^>"; then
+                if [ `unix_secs "${temp_date}"` -gt `unix_secs "${date#\>}"` ]]; then
                     break;
                 fi;
+            fi;
+            
+            if test -n "${date}" && match "${temp_date}" "^${date}"; then
+                break;
+            fi;
+            
+            if test -n "${hash}" && match "${temp_hash}" "^${hash}"; then
+                break;
             fi;
             
             continue;
         fi;
 
-        echo "${line}" >> "${TEMP_DIFF}";
+        echo "${line}" >> "${temp_diff}";
     
-    done < <(cat "${HIST}")
+    done;
     
-    cat "${TEMP_FILE}" && rm -f "${TEMP_FILE}" "${TEMP_DIFF}";
+    cat "${temp_file}" && rm -f "${temp_file}" "${temp_diff}";
 }
 
-load_hist "$FILE" "$DATE" "$HASH"
+main "${file}" "${date}" "${hash}"
 

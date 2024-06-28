@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Runs the Busybox httpd server.
@@ -13,35 +13,36 @@
 #     busybox.httpd.port=127.0.0.1:9000
 #
 
-source "`dirname "$0"`/apkm-common.sh" || exit 1;
-validate_program_and_working_paths || exit 1;
+. "`dirname "$0"`/apkm-common.sh";
 
-PROPERTY_PORT="busybox.httpd.port"
-PROPERTY_PORT_DEFAULT=127.0.0.1:9000
+property_port="busybox.httpd.port"
+property_port_default="127.0.0.1:9000"
 
-function busybox_httpd_port {
-    local PORT=`grep -E "^$PROPERTY_PORT" "$WORKING_DIR/.apkm/conf.txt" | sed "s/$PROPERTY_PORT=//"`;
-    if [[ -n "$PORT" ]];
-    then
-        echo $PORT;
+busybox_httpd_port() {
+    local port=`grep -E "^${property_port}" "${WORKING_DIR}/.apkm/conf.txt" | sed "s/${property_port}=//"`;
+    if [ -n "${port}" ]; then
+        echo "${port}";
     else
-        echo $PROPERTY_PORT_DEFAULT;
+        echo "${property_port_default}";
     fi;
 }
 
-function busybox_httpd_stop {
-    local PID=`ps aux | grep 'busybox httpd' | grep -v "grep" | awk '{print $2}'`
-    if [[ "$PID" -gt 1024 ]];
-    then
-        kill -9 $PID;
+busybox_httpd_stop() {
+    local pid=`ps aux | grep 'busybox httpd' | grep -v "grep" | awk '{ print $2 }'`
+    if [ "$pid" -gt 1024 ]; then
+        kill -9 $pid;
     fi;
 }
 
-function busybox_httpd_start {
-    local PORT=`busybox_httpd_port`;
-    busybox httpd -p "$PORT" -h "$WORKING_DIR/.apkm/html/"
+busybox_httpd_start() {
+    local port=`busybox_httpd_port`;
+    busybox httpd -p "$port" -h "$WORKING_DIR/.apkm/html/"
 }
 
-busybox_httpd_stop;
-busybox_httpd_start;
+main() {
+    busybox_httpd_stop;
+    busybox_httpd_start;
+}
+
+main;
 

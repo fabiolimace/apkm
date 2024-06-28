@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Saves history in `hist` folder and `apkm.db`.
@@ -14,74 +14,66 @@
 #     3. End of diff '#%'.
 # 
 
-FILE="${1}"
+. "`dirname "$0"`/apkm-common.sh";
 
-if [[ ! -f "$FILE" ]];
-then
-    echo "File not found: '$FILE'" 1>&2
-    exit 1;
-fi;
+file="${1}"
+require_file "${file}";
 
-source "`dirname "$0"`/apkm-common.sh" || exit 1;
-validate_program_and_working_paths || exit 1;
-
-function last_hash {
-    local HIST="${1}"
-    tac "${HIST}" | awk 'BEGIN { FS="'"${TAB}"'" } /^'"${HIST_DIFF_START}"'/ { print $2; exit 0; }';
+last_hash() {
+    local hist="${1}"
+    tac "${hist}" | awk 'BEGIN { FS="'"${HT}"'" } /^'"${HIST_DIFF_START}"'/ { print $2; exit 0; }';
 }
 
-function file_diff {
-    "$PROGRAM_DIR/apkm-load-hist.sh" "$FILE" | diff -u /dev/stdin "${FILE}";
+file_diff() {
+    "$PROGRAM_DIR/apkm-load-hist.sh" "${file}" | diff -u /dev/stdin "${file}";
 }
 
-function save_hist_fs {
+save_hist_fs() {
 
-    local FILE="${1}"
-    local UUID="${2}"
-    local UPDT="${3}"
-    local HASH="${4}"
+    local file="${1}"
+    local uuid="${2}"
+    local updt="${3}"
+    local hash="${4}"
     
-    local HIST="`path_hist "$FILE"`"
+    local hist="`path_hist "${file}"`"
     
-    if [[ ! -f "${HIST}" ]];
-    then
-        echo "$HIST_FILE_INF0 path=${FILE}" >> "${HIST}"
-        echo "$HIST_FILE_INF0 uuid=${UUID}" >> "${HIST}"
+    if [ ! -f "${hist}" ]; then
+        echo "$HIST_FILE_INFO path=${file}" >> "${hist}"
+        echo "$HIST_FILE_INFO uuid=${uuid}" >> "${hist}"
     fi;
     
-    if [[ "${HASH}" == "`last_hash "${HIST}"`" ]];
-    then
+    if [ "${hash}" = "`last_hash "${hist}"`" ]; then
         return;
     fi;
     
-    cat >> "${HIST}" <<EOF
-${HIST_DIFF_START} ${UPDT}${TAB}${HASH}
-$(file_diff "$FILE")
+    cat >> "${hist}" <<EOF
+${HIST_DIFF_START} ${updt}${HT}${hash}
+`file_diff "${file}"`
 ${HIST_DIFF_END}
 EOF
 
 }
 
-function save_hist_db {
+save_hist_db() {
 
-    local FILE="${1}"
-    local UUID="${2}"
-    local UPDT="${3}"
-    local HASH="${4}"
+    local file="${1}"
+    local uuid="${2}"
+    local updt="${3}"
+    local hash="${4}"
     
-    echo "INSERT OR REPLACE INTO hist_ values ('$UUID', '$UPDT', '$HASH');" | sqlite3 "$DATABASE";
+    echo "INSERT OR REPLACE INTO hist_ values ('${uuid}', '${updt}', '${hash}');" | sqlite3 "$DATABASE";
 }
 
-function save_hist {
+main() {
 
-    local FILE="${1}"
-    local UUID="`path_uuid "$FILE"`"
-    local UPDT="`file_updt "$FILE"`"
-    local HASH="`file_hash "$FILE"`"
+    local file="${1}"
+    local uuid="`path_uuid "${file}"`"
+    local updt="`file_updt "${file}"`"
+    local hash="`file_hash "${file}"`"
     
-    save_hist_fs "$FILE" "$UUID" "$UPDT" "$HASH"
-    save_hist_db "$FILE" "$UUID" "$UPDT" "$HASH"
+    save_hist_fs "${file}" "${uuid}" "${updt}" "${hash}"
+    save_hist_db "${file}" "${uuid}" "${updt}" "${hash}"
 }
 
-save_hist "$FILE"
+main "${file}";
 

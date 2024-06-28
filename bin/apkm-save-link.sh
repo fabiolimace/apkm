@@ -1,115 +1,109 @@
-#!/bin/bash
+#!/bin/sh
 
 #
-# Saves links in `meta` folder and `apkm.db`.
+# Saves links in `link` folder and `apkm.db`.
 #
 # Usage:
 #
 #     apwm-save-link.sh FILE
 #
 
-FILE="${1}"
+. "`dirname "$0"`/apkm-common.sh";
 
-if [[ ! -f "$FILE" ]];
-then
-    echo "File not found: '$FILE'" 1>&2
-    exit 1;
-fi;
+file="${1}"
+require_file "${file}";
 
-source "`dirname "$0"`/apkm-common.sh" || exit 1;
-validate_program_and_working_paths || exit 1;
-
-function save_link_fs {
-    local FILE="${1}"
-    local META=`path_meta "$FILE" "link"`
-    mkdir --parents "`dirname "$META"`"
-    "$PROGRAM_DIR/apkm-links.awk" "$FILE" > "$META"
+save_link_fs() {
+    local file="${1}"
+    local link=`path_link "${file}"`
+    "$PROGRAM_DIR/apkm-link.awk" "${file}" > "${link}"
 }
 
-function save_link_db {
+save_link_db() {
 
-    local FILE="${1}"
-    local META=`path_meta "$FILE" "link"`
+    local file="${1}"
+    local link=`path_link "${file}"`
     
-    local ORIG # UUIDv8 of the origin file
-    local DEST # UUIDv8 of the destination file
-    local HREF # Path relative to the origin file (as is) or URL
-    local ROAD # Path relative to the base directory (normalized)
-    local TYPE # Link type: Internal (I), External (E)
-    local BROK # Broken link: unknown (0), broken (1)
+    local orig # UUIDv8 of the origin file
+    local dest # UUIDv8 of the destination file
+    local href # Path relative to the origin file (as is) or URL
+    local road # Path relative to the base directory (normalized)
+    local type # Link type: Internal (I), External (E)
+    local brok # Broken link: unknown (0), broken (1)
     
-    while read -s line; do
+    while read -r line; do
         
-        HREF="$line"
-        ORIG="`path_uuid "$FILE"`"
+        href="$line"
+        orig="`path_uuid "${file}"`"
         
-        if [[ "$HREF" =~ https?:\/\/ ]];
+        if match "${href}" "https?:\/\/";
         then
-            local STATUS="`http_status "$HREF"`"
-            if [[ "$STATUS" == "200" ]];
-            then
-                BROK="0";
-                ROAD="";
-                DEST="";
+            local status="`http_status "${href}"`"
+            if [ "${status}" = "200" ]; then
+                brok="0";
+                road="";
+                dest="";
             else
-                BROK="1";
-                ROAD="";
-                DEST="";
+                brok="1";
+                road="";
+                dest="";
             fi;
-            TYPE="E";
+            type="E";
         else
-            local NORM_HREF=`normalize_href "$HREF"`
-            if [[ -f "$NORM_HREF" ]];
-            then
-                BROK="0";
-                ROAD="$NORM_HREF"
-                DEST="`path_uuid "$ROAD"`";
+            local norm_href=`normalize_href "${href}"`
+            if [ -f "$norm_href" ]; then
+                brok="0";
+                road="$norm_href"
+                dest="`path_uuid "${road}"`";
             else
-                BROK="1";
-                ROAD=""
-                DEST="";
+                brok="1";
+                road=""
+                dest="";
             fi;
-            TYPE="I";
+            type="I";
         fi;
         
-        echo "INSERT OR REPLACE INTO link_ values ('$ORIG', '$DEST', '$HREF', '$ROAD', '$TYPE', '$BROK');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
+        echo "INSERT OR REPLACE INTO link_ values ('${orig}', '${dest}', '${href}', '${road}', '${type}', '${brok}');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
         
-    done < "$META"
+    done < "${link}"
 }
 
-function http_status {
-    local HREF="$1"
-    timeout 5s wget --server-response --spider --quiet "$HREF" 2>&1 | awk 'NR==1{print $2}'
+http_status() {
+    local href="$1"
+    timeout 5s wget --server-response --spider --quiet "${href}" 2>&1 | awk 'NR==1 { print $2 }'
 }
 
-function normalize_href {
+normalize_href() {
 
-    local FILE="${1}"
-    local HREF="${1}"
+    local file="${1}"
+    local href="${1}"
     
-    local BASE=`dirname "$FILE"`
+    local base=`dirname "${file}"`
     
-    local NORM_HREF=""
-    local NORM_HREF_OPTION_1="$BASE/$HREF"
-    local NORM_HREF_OPTION_2=`path_remove_dots "$BASE/$HREF"`
+    local norm_href=""
+    local norm_href_option_1="${base}/${href}"
+    local norm_href_option_2=`path_remove_dots "${base}/${href}"`
     
     # use option 2, without dots, if both HREFs ponit to same file
-    if [[ -f "$NORM_HREF_OPTION_1" && -f "$NORM_HREF_OPTION_2" ]];
-    then
+    if [ -f "${norm_href_option_1}" ] && [ -f "${norm_href_option_2}" ]; then
         # check if both options of HREF point to the same file, i.e. the same inode on the file system
-        if [[ "`stat -c %d:%i "$NORM_HREF_OPTION_1"`" == "`stat -c %d:%i "$NORM_HREF_OPTION_2"`" ]]; then
-            NORM_HREF="$NORM_HREF_OPTION_2";
+        if [ "`stat -c %d:%i "${norm_href_option_1}"`" = "`stat -c %d:%i "${norm_href_option_2}"`" ]; then
+            norm_href="${norm_href_option_2}";
         else
-            NORM_HREF="$NORM_HREF_OPTION_1";
+            norm_href="${norm_href_option_1}";
         fi;
     else
-        NORM_HREF="$NORM_HREF_OPTION_1";
+        norm_href="${norm_href_option_1}";
     fi;
     
-    echo "$NORM_HREF";
+    echo "$norm_href";
 }
 
-save_link_fs "$FILE"
-save_link_db "$FILE"
+main() {
+    local file="${1}"
+    save_link_fs "${file}"
+    save_link_db "${file}"
+}
 
+main "${file}";
 

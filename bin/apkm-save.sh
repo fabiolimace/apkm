@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Saves metadata and links in `meta` folder and `apkm.db`.
@@ -8,20 +8,24 @@
 #     apwm-save.sh FILE
 #
 
-source "`dirname "$0"`/apkm-common.sh" || exit 1;
-validate_program_and_working_paths || exit 1;
+. "`dirname "$0"`/apkm-common.sh";
 
-FIND_REGEX=".*.\(md\|txt\)$";
-IGNORE_REGEX="\\.\(apkm\|git\)";
+# find .md and .txt files
+find_regex=".*.\(md\|txt\)$";
 
-while read -s line; do
+# ignore .apkm and .git folders
+ignore_regex="\\.\(apkm\|git\)";
 
-    FILE=`echo $line | sed 's,^\./,,'`; # remove leading "./"
-    
-    "$PROGRAM_DIR/apkm-save-hist.sh" "$FILE";
-    "$PROGRAM_DIR/apkm-save-html.sh" "$FILE";
-    "$PROGRAM_DIR/apkm-save-meta.sh" "$FILE";
-    "$PROGRAM_DIR/apkm-save-link.sh" "$FILE";
+main() {
+    cd "$WORKING_DIR";
+    find . -type f -regex "${find_regex}" | grep -v "${ignore_regex}" | while read -r line; do
+        file=`echo $line | sed 's,^\./,,'`; # remove leading "./"
+        "$PROGRAM_DIR/apkm-save-hist.sh" "$file";
+        "$PROGRAM_DIR/apkm-save-html.sh" "$file";
+        "$PROGRAM_DIR/apkm-save-meta.sh" "$file";
+        "$PROGRAM_DIR/apkm-save-link.sh" "$file";
+    done;
+}
 
-done < <(cd "$WORKING_DIR"; find . -type f -regex "$FIND_REGEX" | grep -v "$IGNORE_REGEX");
+main;
 

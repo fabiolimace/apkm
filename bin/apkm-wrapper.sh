@@ -1,16 +1,16 @@
-#!/usr/bin/env bash
+#!/bin/sh
 #
 # Wrapper for the real APKM main program
 #
 # See: http://mywiki.wooledge.org/BashFAQ/028
 #
 
-if [[ -e "~/.apkm.conf" ]];
+if [ -e "~/.apkm.conf" ];
 then
-    source "~/.apkm.conf";
-elif [[ -e "/etc/apkm.conf" ]];
+    . "~/.apkm.conf";
+elif [ -e "/etc/apkm.conf" ];
 then
-    source "/etc/apkm.conf";
+    . "/etc/apkm.conf";
 fi;
 
 exec "$APKM_HOME/bin/apkm" || {

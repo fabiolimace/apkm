@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Saves metadata in `meta` folder and `apkm.db`.
@@ -8,103 +8,99 @@
 #     apwm-save-meta.sh FILE
 #
 
-FILE="${1}"
+. "`dirname "$0"`/apkm-common.sh";
 
-if [[ ! -f "$FILE" ]];
-then
-    echo "File not found: '$FILE'" 1>&2
-    exit 1;
-fi;
+file="${1}"
+require_file "${file}"
 
-source "`dirname "$0"`/apkm-common.sh" || exit 1;
-validate_program_and_working_paths || exit 1;
+save_meta_fs() {
 
-function save_meta_fs {
-
-    local FILE="${1}"
-    local META=`path_meta "$FILE" "meta"`
+    local file="${1}"
+    local meta=`path_meta "${file}" "meta"`
     
-    mkdir --parents "`dirname "$META"`"
-    
-    local UUID # UUIDv8 of the file path
-    local ROAD # Path relative to the base directory
-    local NAME # File name
-    local HASH # File hash
-    local CRDT # Create date
-    local UPDT # Update date
-    local TAGS # Comma separated values
+    local uuid # UUIDv8 of the file path
+    local road # Path relative to the base directory
+    local name # File name
+    local hash # File hash
+    local crdt # Create date
+    local updt # Update date
+    local tags # Comma separated values
 
-    UUID="`path_uuid "$FILE"`"
-    ROAD="$FILE"
-    NAME="`basename "$FILE"`"
-    HASH="`file_hash "$FILE"`"
-    CRDT="`now`"
-    UPDT="`now`"
+    uuid="`path_uuid "${file}"`"
+    road="${file}"
+    name="`basename "${file}"`"
+    hash="`file_hash "${file}"`"
+    crdt="`now`"
+    updt="`now`"
     
     # read list of tags
-    while read -s line; do
-        if [[ -z "$TAGS" ]]; then
-            TAGS="$line";
+    "$PROGRAM_DIR/apkm-tags.awk" "${file}" | while read -r line; do
+        if [ -z "${tags}" ]; then
+            tags="${line}";
         else
-            TAGS="$TAGS,$line";
+            tags="${tags},${line}";
         fi;
-    done < <("$PROGRAM_DIR/apkm-tags.awk" "$FILE");
+    done;
 
-    cat > "$META" <<EOF
-uuid=$UUID
-path=$ROAD
-name=$NAME
-hash=$HASH
-crdt=$CRDT
-updt=$CRDT
-tags=$TAGS
+    cat > "${meta}" <<EOF
+uuid=${uuid}
+path=${road}
+name=${name}
+hash=${hash}
+crdt=${crdt}
+updt=${updt}
+tags=${tags}
 EOF
 
 }
 
-function save_meta_db {
+save_meta_db() {
 
-    local FILE="${1}"
-    local META=`path_meta "$FILE" "meta"`
+    local file="${1}"
+    local meta=`path_meta "${file}" "meta"`
 
-    local UUID # UUIDv8 of the file path
-    local ROAD # Path relative to the base directory
-    local NAME # File name
-    local HASH # File hash
-    local CRDT # Create date
-    local UPDT # Update date
-    local TAGS # Comma separated values
+    local uuid # UUIDv8 of the file path
+    local road # Path relative to the base directory
+    local name # File name
+    local hash # File hash
+    local crdt # Create date
+    local updt # Update date
+    local tags # Comma separated values
     
-    while read -s line; do
-        case "$line" in
+    while read -r line; do
+        case "${line}" in
             uuid=*)
-                UUID=`echo "$line" | grep "^uuid=" | sed "s/^uuid=//"`
+                uuid=`echo "${line}" | grep "^uuid=" | sed "s/^uuid=//"`
                 ;;
             path=*)
-                ROAD=`echo "$line" | grep "^path=" | sed "s/^path=//"`
+                road=`echo "${line}" | grep "^path=" | sed "s/^path=//"`
                 ;;
             name=*)
-                NAME=`echo "$line" | grep "^name=" | sed "s/^name=//"`
+                name=`echo "${line}" | grep "^name=" | sed "s/^name=//"`
                 ;;
             hash=*)
-                HASH=`echo "$line" | grep "^hash=" | sed "s/^hash=//"`
+                hash=`echo "${line}" | grep "^hash=" | sed "s/^hash=//"`
                 ;;
             crdt=*)
-                CRDT=`echo "$line" | grep "^crdt=" | sed "s/^crdt=//"`
+                crdt=`echo "${line}" | grep "^crdt=" | sed "s/^crdt=//"`
                 ;;
             updt=*)
-                UPDT=`echo "$line" | grep "^updt=" | sed "s/^updt=//"`
+                updt=`echo "${line}" | grep "^updt=" | sed "s/^updt=//"`
                 ;;
             tags=*)
-                TAGS=`echo "$line" | grep "^tags=" | sed "s/^tags=//"`
+                tags=`echo "${line}" | grep "^tags=" | sed "s/^tags=//"`
                 ;;
         esac
-    done < "$META"
+    done < "${meta}"
     
-    echo "INSERT OR REPLACE INTO meta_ values ('$UUID', '$ROAD', '$NAME', '$HASH', '$CRDT', '$UPDT', '$TAGS');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
+    echo "INSERT OR REPLACE INTO meta_ values ('${uuid}', '${road}', '${name}', '${hash}', '${crdt}', '${updt}', '${tags}');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
 }
 
-save_meta_fs "$FILE"
-save_meta_db "$FILE"
+main() {
+    local file="${1}"
+    save_meta_fs "${file}"
+    save_meta_db "${file}"
+}
 
+main "${file}";
 
