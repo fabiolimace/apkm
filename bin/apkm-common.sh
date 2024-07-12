@@ -30,6 +30,16 @@ HASH_REGEX="^[a-f0-9]{40}$";
 DATE_REGEX="^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$"
 UUID_REGEX="^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$";
 
+validate_program_deps() {
+    for dep in git sqlite3; do
+        if [ -z "$(which $dep)" ];
+        then
+            echo "Dependency not installed: '$dep'" 1>&2
+            #exit 1;
+        fi;
+    done;
+}
+
 validate_program_path() {
 
     if [ ! -f "$PROGRAM_DIR/apkm-init.sh" ];
@@ -213,10 +223,11 @@ match() {
 }
 
 main() {
+    validate_program_deps || exit 1;
+    validate_program_path || exit 1;
     if match "$0" "apkm-init.sh"; then
-        validate_program_path || exit 1;
+        :
     else
-        validate_program_path || exit 1;
         validate_working_path || exit 1;
     fi;
 }
