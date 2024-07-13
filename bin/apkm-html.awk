@@ -830,6 +830,12 @@ function ltrim(s) { sub(/^[ \t]+/, "", s); return s; }
 function rtrim(s) { sub(/[ \t]+$/, "", s); return s; }
 function trim(s) { return rtrim(ltrim(s)); }
 
+function slug(str) {
+    gsub(/[^a-zA-Z0-9]/, "-", str);
+    gsub(/-+/, "-", str);
+    return tolower(str);
+}
+
 #===========================================
 # TABULATIONS
 #===========================================
