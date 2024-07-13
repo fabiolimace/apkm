@@ -358,7 +358,7 @@ function make_link(text, href, title) {
 # <http...>
 # <https...>
 # <email@...>
-function diamonds(buf,    start, end, found, out) {
+function diamonds(buf,    start, end, href, out) {
 
     out = "";
     start = index(buf, "<");
@@ -367,16 +367,16 @@ function diamonds(buf,    start, end, found, out) {
     while (0 < start && start < end) {
     
         out = out prefix(buf, start);
-        found = extract(buf, start, end);
+        href = extract(buf, start, end);
         
-        if (index(found, "http") || index(found, "ftp")) {
-            push_link(id++, found);
-            out = out make_link(found, found);
-        } else if (index(found, "@") > 1) {
-            push_link(id++, "mailto:" found);
-            out = out make_link(found, "mailto:" found);
+        if (index(href, "http") || index(href, "ftp")) {
+            push_link(id++, href);
+            out = out make_link(href, href);
+        } else if (index(href, "@") > 1) {
+            push_link(id++, "mailto:" href);
+            out = out make_link(href, "mailto:" href);
         } else {
-            out = out "&lt;" found "&gt";
+            out = out "&lt;" href "&gt";
         }
         
         buf = suffix(buf, start, end);
