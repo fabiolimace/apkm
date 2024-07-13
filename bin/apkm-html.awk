@@ -736,8 +736,8 @@ BEGIN {
     stk_attr[0]="";
 
     blockquote_prefix = "^[ ]*>[ ]?";
-    ul_prefix = "^([ ]{4})*[ ]{0,3}[*+-][ ]"
-    ol_prefix = "^([ ]{4})*[ ]{0,3}[[:digit:]]+\\.[ ]"
+    ul_prefix = "^([ ][ ][ ][ ])*([ ]|[ ][ ]|[ ][ ][ ])?[*+-][ ]";
+    ol_prefix = "^([ ][ ][ ][ ])*([ ]|[ ][ ]|[ ][ ][ ])?[0-9]+\\.[ ]";
     
     blank = -1; # prepare to signal blank line
     
@@ -772,26 +772,26 @@ function level_list(   i, n) {
 }
 
 function count_indent(line) {
-    return count_prefix(line, "^[ ]{4}");
+    return count_prefix(line, "^[ ][ ][ ][ ]");
 }
 
-function count_prefix(line, prefix,    n) {
+function count_prefix(line, pref,    n) {
     n=0
-    while (sub(prefix, "", line)) {
+    while (sub(pref, "", line)) {
         n++;
     }
     return n;
 }
 
 function remove_indent(line) {
-    return remove_prefix(line, "^[ ]{4}");
+    return remove_prefix(line, "^[ ][ ][ ][ ]");
 }
 
-function remove_prefix(line, prefix) {
+function remove_prefix(line, pref) {
 
     # remove leading quote marks
-    while (line ~ prefix) {
-        sub(prefix, "", line);
+    while (line ~ pref) {
+        sub(pref, "", line);
     };
     
     return line;
@@ -917,7 +917,7 @@ function remove_list_indent (line) {
 
     n = level_list();
     while (n > 0) {
-        sub(/^[ ]{4}/, "", line);
+        sub(/^[ ][ ][ ][ ]/, "", line);
         n--;
     }
     
@@ -937,7 +937,7 @@ $0 !~ ul_prefix && $0 !~ ol_prefix {
 
 function list_start(line) {
     sub("^[ ]+", "", line);
-    match(line, "^[[:digit:]]+");
+    match(line, "^[0-9]+");
     return substr(line, RSTART, RLENGTH);
 }
 
@@ -956,12 +956,12 @@ function push_li(tag, start) {
     push("li");
 }
 
-function parse_list_item(tag, prefix, start) {
+function parse_list_item(tag, pref, start) {
     
     lv = level_list();
     cp = count_indent($0) + 1;
     
-    $0 = remove_prefix($0, prefix);
+    $0 = remove_prefix($0, pref);
 
     if (cp == lv) {
     
@@ -1036,13 +1036,13 @@ at("code") {
     next;
 }
 
-/^[ ]{4}/ {
+/^[ ][ ][ ][ ]/ {
 
     if (!at("pre")) {
         push("pre");
     }
 
-    sub("^[ ]{4}", "", $0);
+    sub("^[ ][ ][ ][ ]", "", $0);
     append($0);
     next;
 }

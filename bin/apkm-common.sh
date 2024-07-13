@@ -31,7 +31,7 @@ DATE_REGEX="^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$"
 UUID_REGEX="^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$";
 
 validate_program_deps() {
-    for dep in gawk git sqlite3; do
+    for dep in awk git sqlite3; do
         if [ -z "$(which $dep)" ];
         then
             echo "Dependency not installed: '$dep'" 1>&2
