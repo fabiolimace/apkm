@@ -332,45 +332,61 @@ function escape(str) {
     return str;
 }
 
-# <http...>
-# <email@...>
-function diamonds(buf) {
 
-    regex = "<(http|ftp|[^@ ]+@)[^<> ]+>"
-    while (buf ~ regex) {
-        buf = apply_diamond(buf, regex);
-    }
-    
-    return buf;
+function prefix(str, start, x) {
+    x = (x) ? x : 1;
+    return substr(str, 1, start - x);
 }
 
-function apply_diamond(buf, regex,    out, found, arr) {
+function suffix(str, start, end, x) {
+    x = (x) ? x : 1;
+    return substr(str, start + (end - start) + x);
+}
+
+function extract(str, start, end, x, y) {
+    x = (x) ? x : 1;
+    y = (y) ? y : 1;
+    return substr(str, start + x, (end - start) - y);
+}
+
+function make_link(text, href) {
+    return make("a", text, "href='" href "'");
+}
+
+# <...>
+# <ftp...>
+# <http...>
+# <https...>
+# <email@...>
+function diamonds(buf,    start, end, found, out) {
+
+    out = "";
+    start = index(buf, "<");
+    end = index(buf, ">");
+
+    while (0 < start && start < end) {
     
-    if (match(buf, regex) > 0) {
-    
-        found = substr(buf, RSTART + 1, RLENGTH - 2);
+        found = extract(buf, start, end);
+        out = out prefix(buf, start);
         
-        if (found ~ /^(http|ftp)/) {
+        if (index(found, "http") || index(found, "ftp")) {
             push_link(id++, found);
-            out = out substr(buf, 1, RSTART - 1);
-            out = out make("a", found, "href='" found "'");
-            out = out substr(buf, RSTART + RLENGTH);
-            return out;
-        } else if (found ~ /^[^@ ]+@/) {
+            out = out make_link(found, found);
+        } else if (index(found, "@") > 1) {
             push_link(id++, "mailto:" found);
-            out = out substr(buf, 1, RSTART - 1);
-            out = out make("a", found, "href='mailto:" found "'");
-            out = out substr(buf, RSTART + RLENGTH);
-            return out;
+            out = out make_link(found, "mailto:" found);
         } else {
-            out = out substr(buf, 1, RSTART - 1);
             out = out "&lt;" found "&gt";
-            out = out substr(buf, RSTART + RLENGTH);
-            return out;
         }
+        
+        buf = suffix(buf, start, end);
+        start = index(buf, "<");
+        end = index(buf, ">");
     }
     
-    return buf;
+    out = out buf;
+    
+    return out;
 }
 
 function links(buf) {
