@@ -29,7 +29,7 @@ busybox_httpd_port() {
 
 busybox_httpd_stop() {
     local pid=`ps aux | grep 'busybox httpd' | grep -v "grep" | awk '{ print $2 }'`
-    if [ "$pid" -gt 1024 ]; then
+    if [ -n "$pid" ] && [ "$pid" -gt 1024 ]; then
         kill -9 $pid;
     fi;
 }
@@ -37,6 +37,7 @@ busybox_httpd_stop() {
 busybox_httpd_start() {
     local port=`busybox_httpd_port`;
     busybox httpd -p "$port" -h "$WORKING_DIR/.apkm/html/"
+    echo Listening: "http://$port"
 }
 
 main() {
