@@ -16,6 +16,7 @@
 # * https://www.dotcms.com/docs/latest/markdown-syntax
 # * https://www.codecademy.com/resources/docs/markdown
 # * https://daringfireball.net/projects/markdown/syntax
+# * https://www.ecovida.org.br/docs/manual_site/markdown
 # * https://quarto.org/docs/authoring/markdown-basics.html
 # * https://docs.github.com/en/get-started/writing-on-github
 # * https://fuchsia.dev/fuchsia-src/contribute/docs/markdown
