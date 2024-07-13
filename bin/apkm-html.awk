@@ -920,6 +920,9 @@ $0 ~ blockquote_prefix {
 # LIST ITENS
 #===========================================
 
+# TODO: add more POSIX compatibility as MAWK doesn't support regex quantifiers {x,y}
+# See: https://unix.stackexchange.com/questions/506119/how-to-specify-regex-quantifiers-with-mawk
+
 function pop_p() {
     if (!ready()) pop();
 }
