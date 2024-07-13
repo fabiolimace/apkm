@@ -110,10 +110,11 @@ function append(str, sep) {
         if (sep == "") sep = "\n";
     } else {
         if (sep == "") sep = " ";
-        
+        # append 2-spaces line break
         if (str ~ /^[^ ]+[ ][ ]+$/) {
-            str = str "<br />"
+            str = rtrim(str) "<br>";
         }
+        str = trim(str);
     }
 
     if (buf == "") {
@@ -127,22 +128,32 @@ function open_tag(id) {
 
     write();
     
+    tag = peek();
+    attr = peek_attr();
+    
     if (at("br") || at("hr")) {
-        printf "<%s />\n", peek();
+        printf "<%s>\n", tag;
         return;
     }
-
+    
     if (at("pre") || at("code")) {
-        open_pre(id, peek_attr_value("title"));
+        open_pre(id, peek_value("title"));
         return;
     }
-    
+      
     if (at("h1") || at("h2") || at("h3")) {
-        printf "<%s id='%s' %s>\n", peek(), id, peek_attr();
-        return;
+        if (!attr) {
+            attr = "id='" id "'";
+        } else {
+            attr = "id='" id "' " attr;
+        }
     }
     
-    printf "<%s %s>\n", peek(), peek_attr();
+    if (!attr) {
+        printf "<%s>\n", tag;
+    } else {
+        printf "<%s %s>\n", tag, attr;
+    }
 }
 
 function close_tag() {
@@ -163,7 +174,7 @@ function close_tag() {
     printf "</%s>\n", peek();
 }
 
-function peek_attr_value(key,    found) {
+function peek_value(key,    found) {
     attr = " " peek_attr();
     if (match(attr, "[ ]" key "='[^']*'") > 0) {
         found = substr(attr, RSTART, RLENGTH);
@@ -815,6 +826,10 @@ function remove_prefix(line, prefix) {
     return line;
 }
 
+function ltrim(s) { sub(/^[ \t]+/, "", s); return s; }
+function rtrim(s) { sub(/[ \t]+$/, "", s); return s; }
+function trim(s) { return rtrim(ltrim(s)); }
+
 #===========================================
 # TABULATIONS
 #===========================================
@@ -1086,13 +1101,12 @@ function undo(    tmp) {
 
 /^[\x23]+[ ]+/ {
     
+    # count hashes
     match($0, "\x23+")
     n = RLENGTH > 6 ? 6 : RLENGTH
     
     # remove leading hashes
-    $0 = substr($0, n + 1)
-    # remove leading spaces
-    sub(/^[ ]+/, "")
+    $0 = substr($0, n + 1);
 
     pop_p();
     push("h" n);
@@ -1113,6 +1127,8 @@ function undo(    tmp) {
 #===========================================
 # DEFINITION LIST
 #===========================================
+
+# TODO: make definition list multi-level like <li>
 
 /^:/ {
 
