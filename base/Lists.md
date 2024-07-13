@@ -228,6 +228,10 @@ Without indent after the second item:
 
 1. And here's the third list item.
 
+An image with a clickable link:
+
+[![Tux, the Linux mascot](https://mdg.imgix.net/assets/images/tux.png)](https://kernel.org/)
+
 -----------------------------
 
 Sources:

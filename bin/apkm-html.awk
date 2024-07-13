@@ -3,8 +3,6 @@
 #
 # Converts markdown to HTML
 #
-# Implemented the basic syntax without nesting (list within list etc).
-#
 # See:
 # 
 # * https://spec.commonmark.org
@@ -351,11 +349,19 @@ function extract(str, start, end, x, y) {
 }
 
 function make_link(text, href, title) {
-    return make("a", text, "href='" href "' title='" title "'");
+    if (title) {
+        return make("a", text, "href='" href "' title='" title "'");
+    } else {
+        return make("a", text, "href='" href "'");
+    }
 }
 
 function make_image(text, href, title)  {
-    return make("img", "", "alt='" text "' src='" href "' title='" title "'");
+    if (title) {
+        return make("img", "", "alt='" text "' src='" href "' title='" title "'");
+    } else {
+        return make("img", "", "alt='" text "' src='" href "'");
+    }
 }
 
 function make_footnote(footnote) {
@@ -424,7 +430,7 @@ function links(buf, regex,    start, end, mid, t1, t2, temp, text, href, title, 
         
         if (0 < t1 && t1 < t2) {
             temp = href;
-            href = trim(extract(temp, 1, t1));
+            href = trim(prefix(temp, t1));
             title = trim(extract(temp, t1, t2));
         }
         
@@ -463,7 +469,7 @@ function images(buf, regex,    start, end, mid, t1, t2, temp, text, href, title,
         
         if (0 < t1 && t1 < t2) {
             temp = href;
-            href = trim(extract(temp, 1, t1));
+            href = trim(prefix(temp, t1));
             title = trim(extract(temp, t1, t2));
         }
         
