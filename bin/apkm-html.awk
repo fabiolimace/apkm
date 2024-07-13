@@ -438,6 +438,8 @@ function images(buf) {
     return buf;
 }
 
+# TODO: refactor to use `index()`
+
 # one image at a time
 # ![alt](src "title")
 # <img alt="alt" src="src" title="title" />
@@ -487,6 +489,8 @@ function footnotes(buf) {
     return buf;
 }
 
+# TODO: refactor to use `index()`
+
 # one footnote at a time
 # ^[href]
 # <a href="#href"><sup>[href]<sup></a>
@@ -506,6 +510,8 @@ function apply_footnote(buf, regex,    out, found) {
     return buf;
 }
 
+# TODO: refactor to use `index()`
+
 # TODO: harmonize variable names for reference-style links and footnotes.
 function reflinks(buf) {
 
@@ -516,6 +522,8 @@ function reflinks(buf) {
     
     return buf;
 }
+
+# TODO: refactor to use `index()`
 
 # one link at a time
 # ^[label][id]
