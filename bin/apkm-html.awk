@@ -353,6 +353,10 @@ function make_link(text, href, title) {
     return make("a", text, "href='" href "' title='" title "'");
 }
 
+function make_image(text, href, title)  {
+    return make("img", "", "alt='" text "' src='" href "' title='" title "'");
+}
+
 # <...>
 # <ftp...>
 # <http...>
@@ -428,55 +432,42 @@ function links(buf, regex,    start, end, mid, t1, t2, temp, text, href, title, 
     return out;
 }
 
-function images(buf) {
-
-    regex = "!\\[[^]]+\\]\\([^)]*([ ]\"[^\"]*\")*\\)"
-    while (buf ~ regex) {
-        buf = apply_image(buf, regex);
-    }
-    
-    return buf;
-}
-
-# TODO: refactor to use `index()`
-
-# one image at a time
+# ![alt](src)
 # ![alt](src "title")
-# <img alt="alt" src="src" title="title" />
-function apply_image(buf, regex,    out, found, src, title, alt, rstart, rlength) {
+function images(buf, regex,    start, end, mid, t1, t2, temp, text, href, title, out) {
+
+    out = "";
+    start = index(buf, "![");
+    mid = index(buf, "](");
+    end = index(buf, ")");
+
+    while (0 < start && start < mid && mid < end) {
     
-    alt = ""
-    src = ""
-    title = ""
+        out = out prefix(buf, start);
         
-    if (match(buf, regex) > 0) {
-    
-        found = substr(buf, RSTART, RLENGTH);
+        text = extract(buf, start, mid, 2, 2);
+        href = extract(buf, mid, end, 2, 2);
+
+        t1 = index(href, "\"");
+        t2 = index(substr(href, t1 + 1), "\"") + t1;
         
-        rstart = RSTART
-        rlength = RLENGTH
-        
-        if (match(found, "\\[[^]]+\\]") > 0) {
-            alt = substr(found, RSTART + 1, RLENGTH - 2);
+        if (0 < t1 && t1 < t2) {
+            temp = href;
+            href = trim(extract(temp, 1, t1));
+            title = trim(extract(temp, t1, t2));
         }
         
-        if (match(found, "\\]\\([^ ]+([ ]+\"[^\"]*\")?\\)") > 0) {
-            src = substr(found, RSTART + 2, RLENGTH - 3);
-        }
+        out = out make_image(text, href, title);
         
-        if (match(src, "([ ]\"[^\"]*\")") > 0) {
-            title = substr(src, RSTART + 2, RLENGTH - 3);
-            src = substr(src, 1, RSTART - 1);
-        }
-        
-        out = out substr(buf, 1, rstart - 1);
-        out = out make("img", "", "alt='" alt "' src='" src "' title='" title "'");
-        out = out substr(buf, rstart + rlength);
-        
-        return out;
+        buf = suffix(buf, start, end);
+        start = index(buf, "![");
+        mid = index(buf, "](");
+        end = index(buf, ")");
     }
     
-    return buf;
+    out = out buf;
+    
+    return out;
 }
 
 function footnotes(buf) {
