@@ -287,9 +287,11 @@ function apply_style(buf, mark, len, tag,    out, found, rstart, rlength) {
     
     out = "";
     
-    while (index(buf, mark) > 0) {
+    position = index(buf, mark);
+    
+    while (position > 0) {
         
-        rstart = index(buf, mark) + len;
+        rstart = position + len;
         rlength = index(substr(buf, rstart), mark) - 1;
         
         if (rlength <= 0) break;
@@ -304,6 +306,7 @@ function apply_style(buf, mark, len, tag,    out, found, rstart, rlength) {
         out = out make(tag, found);
         
         buf = substr(buf, rstart + rlength + len);
+        position = index(buf, mark);
     }
     
     out = out buf;
