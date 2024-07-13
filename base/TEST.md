@@ -309,3 +309,5 @@ normal paragraph. For example:
 
 Use the `printf()` function.
 
+[1]: https://en.wikipedia.org/wiki/Hobbit#Lifestyle
+

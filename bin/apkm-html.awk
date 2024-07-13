@@ -357,6 +357,14 @@ function make_image(text, href, title)  {
     return make("img", "", "alt='" text "' src='" href "' title='" title "'");
 }
 
+function make_footnote(footnote) {
+    return make("a", "<sup>[" footnote "]<sup>", "href='#foot-" footnote "'");
+}
+
+function make_reflink(text, ref) {
+    return make("a", text, "href='#link-" ref "'");
+}
+
 # <...>
 # <ftp...>
 # <http...>
@@ -471,7 +479,7 @@ function images(buf, regex,    start, end, mid, t1, t2, temp, text, href, title,
 }
 
 # [^footnote]
-function footnotes(buf, regex,    out, footnote) {
+function footnotes(buf, regex,    start, end, out, footnote) {
 
     out = "";
     start = index(buf, "[^");
@@ -494,46 +502,41 @@ function footnotes(buf, regex,    out, footnote) {
     return out;
 }
 
-function make_footnote(footnote) {
-    return make("a", "<sup>[" footnote "]<sup>", "href='#foot-" footnote "'");
+function min(x, y) {
+    return (x <= y) ? x : y;
 }
 
-# TODO: refactor to use `index()`
-
-# TODO: harmonize variable names for reference-style links and footnotes.
-function reflinks(buf) {
-
-    regex = "\\[[^]]+\\][ ]?\\[[^]]+\\]"
-    while (buf ~ regex) {
-        buf = apply_reflink(buf, regex);
-    }
-    
-    return buf;
+function max(x, y) {
+    return (x >= y) ? x : y;
 }
 
-# TODO: refactor to use `index()`
-
-# one link at a time
-# ^[label][id]
-# <a href="#id">label</a>
-function apply_reflink(buf, regex,    out, found, arr) {
-
-    if (match(buf, regex) > 0) {
+# [text][ref]
+function reflinks(buf,    start, end, mid1, mid2, out, text, ref) {
     
-        found = substr(buf, RSTART, RLENGTH);
+    out = "";
+    start = index(buf, "[");
+    mid1 = index(substr(buf, start + 1), "]") + start;
+    mid2 = index(substr(buf, mid1 + 1), "[") + mid1;
+    end = index(substr(buf, mid2 + 1), "]") + mid2;
         
-        split(found, arr, "\\][ ]?\\[");
-        label = substr(arr[1], 2);
-        id = substr(arr[2], 1, length(arr[2]) - 1);
+    while (0 < start && start < mid1 && mid2 < end && (mid2 - mid1) <= 2) {
+
+        text = extract(buf, start, mid1);
+        ref = extract(buf, mid2, end, 1, 1);
         
-        out = out substr(buf, 1, RSTART - 1);
-        out = out make("a", label, "href='#link-" id "'");
-        out = out substr(buf, RSTART + RLENGTH);
+        out = out prefix(buf, start);
+        out = out make_reflink(text, ref);
         
-        return out;
+        buf = suffix(buf, start, end);
+        start = index(buf, "[");
+        mid1 = index(substr(buf, start + 1), "]") + start;
+        mid2 = index(substr(buf, mid1 + 1), "[") + mid1;
+        end = index(substr(buf, mid2 + 1), "]") + mid2;
     }
     
-    return buf;
+    out = out buf;
+    
+    return out;
 }
 
 function print_header() {
