@@ -349,8 +349,8 @@ function extract(str, start, end, x, y) {
     return substr(str, start + x, (end - start) - y);
 }
 
-function make_link(text, href) {
-    return make("a", text, "href='" href "'");
+function make_link(text, href, title) {
+    return make("a", text, "href='" href "' title='" title "'");
 }
 
 # <...>
@@ -366,8 +366,8 @@ function diamonds(buf,    start, end, found, out) {
 
     while (0 < start && start < end) {
     
-        found = extract(buf, start, end);
         out = out prefix(buf, start);
+        found = extract(buf, start, end);
         
         if (index(found, "http") || index(found, "ftp")) {
             push_link(id++, found);
@@ -389,56 +389,43 @@ function diamonds(buf,    start, end, found, out) {
     return out;
 }
 
-function links(buf) {
+# [text](href)
+# [text](href "title")
+function links(buf, regex,    start, end, mid, t1, t2, temp, text, href, title, out) {
 
-    # the only differende of [img] is the leading "!"
-    regex = "\\[[^]]+\\]\\([^)]*([ ]\"[^\"]*\")*\\)"
-    while (buf ~ regex) {
-        buf = apply_link(buf, regex);
-    }
-    
-    return buf;
-}
+    out = "";
+    start = index(buf, "[");
+    mid = index(buf, "](");
+    end = index(buf, ")");
 
-# one link at a time
-# [label](href "title")
-# <a href="href" title="title">lable</a>
-function apply_link(buf, regex,    out, found, href, title, text, rstart, rlength) {
+    while (0 < start && start < mid && mid < end) {
     
-    text = ""
-    href = ""
-    title = ""
-    
-    if (match(buf, regex) > 0) {
-    
-        found = substr(buf, RSTART, RLENGTH);
+        out = out prefix(buf, start);
         
-        rstart = RSTART
-        rlength = RLENGTH
+        text = extract(buf, start, mid);
+        href = extract(buf, mid, end, 2, 2);
+
+        t1 = index(href, "\"");
+        t2 = index(substr(href, t1 + 1), "\"") + t1;
         
-        if (match(found, "\\[[^]]+\\]") > 0) {
-            text = substr(found, RSTART + 1, RLENGTH - 2);
+        if (0 < t1 && t1 < t2) {
+            temp = href;
+            href = trim(extract(temp, 1, t1));
+            title = trim(extract(temp, t1, t2));
         }
         
-        if (match(found, "\\]\\([^ ]+([ ]+\"[^\"]*\")?\\)") > 0) {
-            href = substr(found, RSTART + 2, RLENGTH - 3);
-        }
-        
-        if (match(href, "([ ]\"[^\"]*\")") > 0) {
-            title = substr(href, RSTART + 2, RLENGTH - 3);
-            href = substr(href, 1, RSTART - 1);
-        }
-        
-        out = out substr(buf, 1, rstart - 1);
-        out = out make("a", text, "href='" href "' title='" title "'");
-        out = out substr(buf, rstart + rlength);
-        
+        out = out make_link(text, href, title);
         push_link(id++, href, title, text);
         
-        return out;
+        buf = suffix(buf, start, end);
+        start = index(buf, "[");
+        mid = index(buf, "](");
+        end = index(buf, ")");
     }
     
-    return buf;
+    out = out buf;
+    
+    return out;
 }
 
 function images(buf) {
