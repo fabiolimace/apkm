@@ -366,7 +366,6 @@ function make_reflink(text, ref) {
     return make("a", text, "href='#link-" ref "'");
 }
 
-# <...>
 # <ftp...>
 # <http...>
 # <https...>
@@ -379,17 +378,19 @@ function diamonds(buf,    start, end, href, out) {
 
     while (0 < start && start < end) {
     
-        out = out prefix(buf, start);
         href = extract(buf, start, end);
         
-        if (index(href, "http") || index(href, "ftp")) {
+        if (index(href, "http") == 1 || index(href, "ftp") == 1) {
             push_link(id++, href);
+            out = out prefix(buf, start);
             out = out make_link(href, href);
         } else if (index(href, "@") > 1) {
             push_link(id++, "mailto:" href);
+            out = out prefix(buf, start);
             out = out make_link(href, "mailto:" href);
         } else {
-            out = out "&lt;" href "&gt";
+            # do nothing; just give back
+            out = out prefix(buf, end + 1);
         }
         
         buf = suffix(buf, start, end);
