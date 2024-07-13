@@ -37,13 +37,13 @@ ______________________________________________________________________________
 
 
 Heading 1:
-  Morbi sit amet sagittis augue
-    Ut in mollis risus, tempor commodo
+ Morbi sit amet sagittis augue
+   Ut in mollis risus, tempor commodo
 ===========
 
 Heading 2:
-  Morbi sit amet sagittis augue
-    Ut in mollis risus, tempor commodo
+ Morbi sit amet sagittis augue
+   Ut in mollis risus, tempor commodo
 -----------
 
 ******************************************************************************

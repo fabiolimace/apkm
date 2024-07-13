@@ -333,6 +333,12 @@ function apply_style(buf, mark, len, tag,    out, found) {
     
         found = substr(buf, RSTART + len, RLENGTH - 2*len);
         
+        if (tag == "code") {
+            # escape tag delimiters
+            gsub(/</, "\\&lt;", found);
+            gsub(/>/, "\\&gt;", found);
+        }
+        
         out = out substr(buf, 1, RSTART - 1);
         out = out make(tag, found);
         out = out substr(buf, RSTART + RLENGTH);
@@ -342,6 +348,10 @@ function apply_style(buf, mark, len, tag,    out, found) {
     
     return buf;
 }
+
+# TODO: check if escapes() it can be replaced with:
+# gsub(/</, "\\&lt;", buf);
+# gsub(/>/, "\\&gt;", buf);
 
 # '<...>'
 function escapes(buf) {
