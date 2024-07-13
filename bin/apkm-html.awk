@@ -470,35 +470,32 @@ function images(buf, regex,    start, end, mid, t1, t2, temp, text, href, title,
     return out;
 }
 
-function footnotes(buf) {
+# [^footnote]
+function footnotes(buf, regex,    out, footnote) {
 
-    regex = "\\[\\^[^]]+\\]"
-    while (buf ~ regex) {
-        buf = apply_footnote(buf, regex);
+    out = "";
+    start = index(buf, "[^");
+    end = index(buf, "]");
+
+    while (0 < start && start < end) {
+    
+        out = out prefix(buf, start);
+        
+        footnote = extract(buf, start, end, 2, 2);
+        out = out make_footnote(footnote);
+        
+        buf = suffix(buf, start, end);
+        start = index(buf, "[^");
+        end = index(buf, "]");
     }
     
-    return buf;
+    out = out buf;
+    
+    return out;
 }
 
-# TODO: refactor to use `index()`
-
-# one footnote at a time
-# ^[href]
-# <a href="#href"><sup>[href]<sup></a>
-function apply_footnote(buf, regex,    out, found) {
-
-    if (match(buf, regex) > 0) {
-    
-        found = substr(buf, RSTART + 2, RLENGTH - 3);
-        
-        out = out substr(buf, 1, RSTART - 1);
-        out = out make("a", "<sup>[" found "]<sup>", "href='#foot-" found "'");
-        out = out substr(buf, RSTART + RLENGTH);
-        
-        return out;
-    }
-    
-    return buf;
+function make_footnote(footnote) {
+    return make("a", "<sup>[" footnote "]<sup>", "href='#foot-" footnote "'");
 }
 
 # TODO: refactor to use `index()`
