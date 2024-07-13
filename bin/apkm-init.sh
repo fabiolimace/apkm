@@ -137,7 +137,7 @@ fi;
 main() {
     apkm_init_fs;
     apkm_init_db;
-    apkm_init_git;
+#    apkm_init_git;
 }
 
 main;

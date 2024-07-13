@@ -35,7 +35,7 @@ validate_program_deps() {
         if [ -z "$(which $dep)" ];
         then
             echo "Dependency not installed: '$dep'" 1>&2
-            #exit 1;
+            exit 1;
         fi;
     done;
 }
@@ -233,7 +233,6 @@ main() {
 }
 
 main;
-
 
 # See [POSIX Definitions](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap03.html):
 # 3.40 Basename
