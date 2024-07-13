@@ -1100,12 +1100,11 @@ function undo(    tmp) {
     next;
 }
 
-
 #===========================================
 # HORIZONTAL RULER
 #===========================================
 
-/^[*_-]{3,}[ ]*$/ {
+/^[*_-][*_-][*_-]+[ ]*$/ {
     pop_p();
     push("hr");
     next;
@@ -1227,7 +1226,7 @@ function push_footnote(ref, text) {
 
 /^[ ]*\[\^[^]]+\][:]/ {
 
-    # ^[id]: note
+    # [^id]: note
     if (match($0, /\[\^[^]]+\][:]/) > 0) {
         
         ref = substr($0, RSTART + 2, RLENGTH - 4);
@@ -1242,6 +1241,8 @@ function push_footnote(ref, text) {
 # (REFERENCE STYLE) LINK
 #===========================================
 
+# TODO: implement all styles: https://gist.github.com/emedinaa/28ed71b450243aba48accd634679f805
+
 function push_link(ref, href, title, text) {
     link_count++;
     link_ref[link_count] = ref;
@@ -1252,13 +1253,13 @@ function push_link(ref, href, title, text) {
 
 /^[ ]*\[[^]]+\][:]/ {
 
-    # ^[ref]: href
-    # ^[ref]: href "title"
-    # ^[ref]: href 'title'
-    # ^[ref]: href (title)
-    # ^[ref]: <href> "title"
-    # ^[ref]: <href> 'title'
-    # ^[ref]: <href> (title)
+    # [ref]: href
+    # [ref]: href "title"
+    # [ref]: href 'title'
+    # [ref]: href (title)
+    # [ref]: <href> "title"
+    # [ref]: <href> 'title'
+    # [ref]: <href> (title)
     if (match($0, /\[[^]]+\][:]/) > 0) {
         
         ref = substr($0, RSTART + 1, RLENGTH - 3);
@@ -1286,6 +1287,8 @@ function push_link(ref, href, title, text) {
 # PARAGRAPH
 #===========================================
 
+# TODO: transform "<li>text" in "<li><p>text", undoing the previous <li>
+
 /^.+$/ {
     if (ready()) {
         if (at("li")) {
@@ -1296,6 +1299,7 @@ function push_link(ref, href, title, text) {
             push("p");
         }
     }
+    
     append($0);
     next;
 }
