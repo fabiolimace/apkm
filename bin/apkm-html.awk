@@ -511,27 +511,32 @@ function max(x, y) {
 }
 
 # [text][ref]
+# [text] [ref]
 function reflinks(buf,    start, end, mid1, mid2, out, text, ref) {
     
     out = "";
     start = index(buf, "[");
-    mid1 = index(substr(buf, start + 1), "]") + start;
-    mid2 = index(substr(buf, mid1 + 1), "[") + mid1;
-    end = index(substr(buf, mid2 + 1), "]") + mid2;
+    mid1 = index(buf, "]");
         
-    while (0 < start && start < mid1 && mid2 < end && (mid2 - mid1) <= 2) {
+    while (0 < start && start < mid1) {
 
-        text = extract(buf, start, mid1);
-        ref = extract(buf, mid2, end, 1, 1);
+        mid2 = index(substr(buf, mid1 + 1), "[") + mid1;
+        end = index(substr(buf, mid2 + 1), "]") + mid2;
         
-        out = out prefix(buf, start);
-        out = out make_reflink(text, ref);
+        if (mid1 < mid2 && mid2 < end) {
+            if (mid2 - mid1 <= 2) {
+                text = extract(buf, start, mid1);
+                ref = extract(buf, mid2, end, 1, 1);
+                out = out prefix(buf, start);
+                out = out make_reflink(text, ref);
+            } else {
+                out = out prefix(buf, end + 1);
+            }
+        }
         
         buf = suffix(buf, start, end);
         start = index(buf, "[");
-        mid1 = index(substr(buf, start + 1), "]") + start;
-        mid2 = index(substr(buf, mid1 + 1), "[") + mid1;
-        end = index(substr(buf, mid2 + 1), "]") + mid2;
+        mid1 = index(buf, "]");
     }
     
     out = out buf;
