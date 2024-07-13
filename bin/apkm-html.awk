@@ -87,7 +87,7 @@ function unpush(    tag) {
 function write() {
 
     if (at("pre") || at("code")) {
-        buf = escapes(buf);
+        buf = escape(buf);
     } else {
         # the order matters
         buf = diamonds(buf);
@@ -209,174 +209,124 @@ function buttons(id,    style, clipboard, wordwrap) {
 
 function make(tag, text, attr) {
         
-        if (text == "") {
-            return "<" tag " " attr "/>";
+        if (text) {
+            if (attr) {
+                return "<" tag " " attr ">" text "</" tag ">";
+            } else {
+                return "<" tag ">" text "</" tag ">";
+            }
         } else {
-            return "<" tag " " attr ">" text "</" tag ">";
+            if (attr) {
+                return "<" tag " " attr "/>";
+            } else {
+                return "<" tag "/>";
+            }
         }
 }
 
-function emphasis(buf) {
-
-    while (buf ~ "_[^_]+_") {
-        buf = apply_style(buf, "_", 1, "em");
-    }
-
-    while (buf ~ "\\*[^\\*]+\\*") {
-        buf = apply_style(buf, "\\*", 1, "em");
-    }
-    
-    return buf;
-}
-
-function strong(buf) {
-
-    while (buf ~ "__[^_]+__") {
-        buf = apply_style(buf, "__", 2, "strong");
-    }
-    
-    while (buf ~ "\\*\\*[^\\*]+\\*\\*") {
-        buf = apply_style(buf, "\\*\\*", 2, "strong");
-    }
-    
-    return buf;
-}
-
 function snippet(buf) {
-
-    while (buf ~ "`[^`]+`") {
-        buf = apply_style(buf, "`", 1, "code");
-    }
-    
-    return buf;
-}
-
-function superscript(buf) {
-
-    while (buf ~ "\\^[^\\^]+\\^") {
-        buf = apply_style(buf, "\\^", 1, "sup");
-    }
-    
-    return buf;
-}
-
-function subscript(buf) {
-
-    while (buf ~ "~[^~]+~") {
-        buf = apply_style(buf, "~", 1, "sub");
-    }
-    
-    return buf;
-}
-
-function deleted(buf) {
-
-    while (buf ~ "~~[^~]+~~") {
-        buf = apply_style(buf, "~~", 2, "del");
-    }
-    
-    return buf;
-}
-
-function inserted(buf) {
-
-    while (buf ~ "\\+\\+[^\\+]+\\+\\+") {
-        buf = apply_style(buf, "\\+\\+", 2, "ins");
-    }
-    
-    return buf;
-}
-
-function highlighted(buf) {
-
-    while (buf ~ "==[^=]+==") {
-        buf = apply_style(buf, "==", 2, "mark");
-    }
-    
+    buf = apply_style(buf, "``", 2, "code");
+    buf = apply_style(buf, "`", 1, "code");
     return buf;
 }
 
 function formula(buf) {
-
-    while (buf ~ "\\$\\$[^\\$]+\\$\\$") {
-        buf = apply_style(buf, "\\$\\$", 2, "code");
-    }
-    
-    while (buf ~ "\\$[^\\$]+\\$") {
-        buf = apply_style(buf, "\\$", 1, "code");
-    }
-    
+    buf = apply_style(buf, "$$", 2, "code");
+    buf = apply_style(buf, "$", 1, "code");
     return buf;
+}
+
+function underscore(buf) {
+    buf = apply_style(buf, "__", 2, "strong");
+    buf = apply_style(buf, "_", 1, "em");
+    return buf;
+}
+
+function asterisk(buf) {
+    buf = apply_style(buf, "**", 2, "strong");
+    buf = apply_style(buf, "*", 1, "em");
+    return buf;
+}
+
+function deleted(buf) {
+    return apply_style(buf, "~~", 2, "del");
+}
+
+function inserted(buf) {
+    return apply_style(buf, "++", 2, "ins");
+}
+
+function highlighted(buf) {
+    return apply_style(buf, "==", 2, "mark");
+}
+
+function superscript(buf) {
+    return apply_style(buf, "^", 1, "sup");
+}
+
+function subscript(buf) {
+    return apply_style(buf, "~", 1, "sub");
 }
 
 function styles(buf) {
 
-    buf = strong(buf);
-    buf = emphasis(buf);
     buf = snippet(buf);
+    buf = formula(buf);
+    buf = asterisk(buf);
+    buf = underscore(buf);
     buf = deleted(buf);
     buf = inserted(buf);
     buf = highlighted(buf);
     buf = superscript(buf);
     buf = subscript(buf);
-    buf = formula(buf);
     
     return buf;
 }
 
-# one style at a time
-function apply_style(buf, mark, len, tag,    out, found) {
-
-    regex = mark "[^" mark "]+" mark
+function apply_style(buf, mark, len, tag,    out, found, rstart, rlength) {
     
-    if (match(buf, regex) > 0) {
+    out = "";
     
-        found = substr(buf, RSTART + len, RLENGTH - 2*len);
+    while (index(buf, mark) > 0) {
+        
+        rstart = index(buf, mark) + len;
+        rlength = index(substr(buf, rstart), mark) - 1;
+        
+        if (rlength <= 0) break;
+        
+        found = substr(buf, rstart, rlength);
         
         if (tag == "code") {
-            # escape tag delimiters
-            gsub(/</, "\\&lt;", found);
-            gsub(/>/, "\\&gt;", found);
+            found = escape(found);
         }
         
-        out = out substr(buf, 1, RSTART - 1);
+        out = out substr(buf, 1, rstart -1 - len);
         out = out make(tag, found);
-        out = out substr(buf, RSTART + RLENGTH);
         
-        return out;
+        buf = substr(buf, rstart + rlength + len);
     }
     
-    return buf;
+    out = out buf;
+    
+    return out;
 }
 
-# TODO: check if escapes() it can be replaced with:
-# gsub(/</, "\\&lt;", buf);
-# gsub(/>/, "\\&gt;", buf);
-
-# '<...>'
-function escapes(buf) {
-
-    regex = "<[^<>]+>"
-    while (buf ~ regex) {
-        buf = apply_escape(buf, regex);
-    }
-    
-    return buf;
-}
-
-function apply_escape(buf, regex,    out, found, arr) {
-    
-    if (match(buf, regex) > 0) {
-    
-        found = substr(buf, RSTART + 1, RLENGTH - 2);
-        
-        out = out substr(buf, 1, RSTART - 1);
-        out = out "&lt;" found "&gt;"
-        out = out substr(buf, RSTART + RLENGTH);
-        return out;
-    }
-    
-    return buf;
+function escape(str) {
+    # html special characters
+    gsub(/[&]/, "\\&amp;", str);
+    gsub(/[<]/, "\\&lt;", str);
+    gsub(/[>]/, "\\&gt;", str);
+    # markdown special characters
+    gsub(/[$]/, "\\&#36;", str);
+    gsub(/[*]/, "\\&#42;", str);
+    gsub(/[+]/, "\\&#43;", str);
+    gsub(/[-]/, "\\&#45;", str);
+    gsub(/[=]/, "\\&#61;", str);
+    gsub(/[\^]/, "\\&#94;", str);
+    gsub(/[_]/, "\\&#95;", str);
+    gsub(/[`]/, "\\&#96;", str);
+    gsub(/[~]/, "\\&#126;", str);
+    return str;
 }
 
 # <http...>
