@@ -36,7 +36,7 @@ run_test() {
     sed -E '1,/<hr>/d' "${tmpl}" >> "${html}.temp"
     mv "${html}.temp" "${html}"
     
-    "$PROGRAM_DIR/apkm-html.awk" "${file}" | diff - "${html}" \
+    "$PROGRAM_DIR/apkm-html.awk" "${file}" | diff -u - "${html}" \
         || exit_error ${3};
 }
 

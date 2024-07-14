@@ -224,7 +224,7 @@ match() {
 
 validate() {
 
-    if [ "$validate" -eq 0 ]; then
+    if [ -n "$validate" ] && [ "$validate" -eq 0 ]; then
         return;
     fi;
     
