@@ -222,7 +222,12 @@ match() {
     echo "${text}" | grep -E -q "${rexp}";
 }
 
-main() {
+validate() {
+
+    if [ "$validate" -eq 0 ]; then
+        return;
+    fi;
+    
     validate_program_deps || exit 1;
     validate_program_path || exit 1;
     if match "$0" "apkm-init.sh"; then
@@ -230,6 +235,10 @@ main() {
     else
         validate_working_path || exit 1;
     fi;
+}
+
+main() {
+    validate;
 }
 
 main;

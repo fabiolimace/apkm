@@ -140,13 +140,13 @@ function open_tag(id) {
         return;
     }
       
-    if (at("h1") || at("h2") || at("h3")) {
-        if (!attr) {
-            attr = "id='" id "'";
-        } else {
-            attr = "id='" id "' " attr;
-        }
-    }
+#    if (at("h1") || at("h2") || at("h3")) {
+#        if (!attr) {
+#            attr = "id='" id "'";
+#        } else {
+#            attr = "id='" id "' " attr;
+#        }
+#    }
     
     if (!attr) {
         printf "<%s>\n", tag;
