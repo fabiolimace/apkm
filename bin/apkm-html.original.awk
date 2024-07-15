@@ -1,43 +1,5 @@
 #!/usr/bin/awk -f
 
-
-
-
-
-
-
-
-
-
-
-
-
-#
-#
-# NOTE:
-#
-# This file is been refactored. Only a few thing work.
-# The original code is safe in `apt-html.original.awk`.
-#
-#
-#
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #
 # Converts markdown to HTML
 #
@@ -73,6 +35,10 @@ function empty() {
     return idx == 0
 }
 
+function at(tag) {
+    return peek() == tag ? 1 : 0;
+}
+
 function peek() {
     return stk[idx];
 }
@@ -81,142 +47,49 @@ function peek_attr() {
     return stk_attr[idx];
 }
 
-# TODO: refactor
-function peek_value(key,    found) {
-    attr = " " peek_attr();
-    if (match(attr, "[ ]" key "='[^']*'") > 0) {
-        found = substr(attr, RSTART, RLENGTH);
-        match(found, "='[^']*'");
-        return substr(found, RSTART + 2, RLENGTH - 3);
+function push(tag, attr) {
+
+    ++id;
+    ++idx;
+
+    stk[idx] = tag;
+    stk_attr[idx] = attr;
+    
+    open_tag(id);
+    
+    # close <br> and <hr>
+    if (at("br") || at("hr")) {
+        pop();
     }
-    return "";
-}
-
-function identifier() {
-    return ++id;
-}
-
-function at(tag) {
-    return peek() == tag ? 1 : 0;
-}
-
-function any(tags,   i, n, arr) {
-    n = split(tags, arr, ",");
-    for (i = 1; i <= n; i++) {
-        if (at(arr[i])) {
-            return 1;
-        }
-    }
-    return "";
-}
-
-function pop_at(tag) {
-    if (at(tag)) {
-        return pop();
-    }
-    return "";
-}
-
-function pop_any(tags) {
-    if (any(tags)) {
-        return pop();
-    }
-    return "";
+    
+    return id;
 }
 
 function pop() {
-
     if (empty()) {
         return "";
     }
     
-    print_tag();
-    
+    close_tag();
     return unpush();
-}
-
-function push(tag, attr) {
-    ++idx;
-    stk[idx] = tag;
-    stk_attr[idx] = attr;
 }
 
 function unpush(    tag) {
     tag = peek();
     if (!empty()) {
         delete stk_attr[idx];
-        delete stk[idx];
-        idx--;
+        delete stk[idx--];
     }
     return tag;
 }
 
-function print_tag() {
-    open_tag();
-    print_buf();
-    close_tag();
-}
-
-function open_tag() {
-    
-    if (at("br") || at("hr")) {
-        printf "<%s>\n", peek();
-        return;
-    }
-    
-    if (at("pre") || at("code")) {
-        open_pre(peek_value("title"));
-        return;
-    }
-    
-    if (!peek_attr()) {
-        printf "<%s>\n", peek();
-    } else {
-        printf "<%s %s>\n", peek(), peek_attr();
-    }
-}
-
-function close_tag() {
-    
-    if (at("br") || at("hr")) {
-        return; # empty element
-    }
-    
-    if (at("pre") || at("code")) {
-        close_pre();
-        return;
-    }
-    
-    printf "</%s>\n", peek();
-}
-
-function buffer(str,    sep) {
-    
-    if (at("pre") || at("code")) {
-        sep = "\n";
-    } else {
-        sep = " ";
-        # 2-spaces line break
-        if (str ~ /[ ][ ]+$/) {
-            str = rtrim(str) make_tag("br");
-        }
-        str = trim(str);
-    }
-
-    if (buf == "") {
-        buf = str;
-    } else {
-        buf=buf sep str;
-    }
-}
-
-function print_buf() {
+function write() {
 
     if (at("pre") || at("code")) {
         buf = escape(buf);
     } else {
         # the order matters
-        buf = angles(buf);
+        buf = diamonds(buf);
         buf = footnotes(buf);
         buf = images(buf);
         buf = links(buf);
@@ -230,49 +103,169 @@ function print_buf() {
     buf = "";
 }
 
-function coalesce(str, alternative) {
-    return (str) ? str : alternative;
+function append(str, sep) {
+
+    if (at("pre") || at("code")) {
+        if (sep == "") sep = "\n";
+    } else {
+        if (sep == "") sep = " ";
+        # append 2-spaces line break
+        if (str ~ /^[^ ]+[ ][ ]+$/) {
+            str = rtrim(str) "<br>";
+        }
+        str = trim(str);
+    }
+
+    if (buf == "") {
+        buf = str;
+    } else {
+        buf=buf sep str;
+    }
 }
 
-function open_pre(title,    id) {
+function open_tag(id) {
 
-    id = identifier();
-    title = coalesce(title, "&gt;_");
-
-    if (TEST) {
-        printf "<pre><code>\n";
-    } else {
-        printf "<div class='codeblock'>";
-        printf "<div class='codeblock-head'>";
-        printf "<span class='codeblock-title'>%s</span>", title;
-        printf "<span class='codeblock-buttons'>%s</span>", buttons(id);
-        printf "</div>";
-        printf "<pre class='codeblock-body' id='%s'>", id;
-        printf "<code class='codeblock-code'>";
+    write();
+    
+    tag = peek();
+    attr = peek_attr();
+    
+    if (at("br") || at("hr")) {
+        printf "<%s>\n", tag;
+        return;
     }
+    
+    if (at("pre") || at("code")) {
+        open_pre(id, peek_value("title"));
+        return;
+    }
+      
+#    if (at("h1") || at("h2") || at("h3")) {
+#        if (!attr) {
+#            attr = "id='" id "'";
+#        } else {
+#            attr = "id='" id "' " attr;
+#        }
+#    }
+    
+    if (!attr) {
+        printf "<%s>\n", tag;
+    } else {
+        printf "<%s %s>\n", tag, attr;
+    }
+}
+
+function close_tag() {
+
+    write();
+    
+    if (at("br") || at("hr")) {
+        # do nothing.
+        # already closed.
+        return;
+    }
+    
+    if (at("pre") || at("code")) {
+        close_pre();
+        return;
+    }
+    
+    printf "</%s>\n", peek();
+}
+
+function peek_value(key,    found) {
+    attr = " " peek_attr();
+    if (match(attr, "[ ]" key "='[^']*'") > 0) {
+        found = substr(attr, RSTART, RLENGTH);
+        match(found, "='[^']*'");
+        return substr(found, RSTART + 2, RLENGTH - 3);
+    }
+    return "";
+}
+
+function open_pre(id, title) {
+    printf "<pre>";
+    printf "<div class='pre-head'>";
+    printf "<span>%s</span>", title;
+    printf "%s", buttons(id);
+    printf "</div>";
+    printf "<div class='pre-body' id='%s'>", id;
+    return;
 }
 
 function close_pre() {
-    if (TEST) {
-        printf "</code></pre>\n";
-    } else {
-        printf "</code></pre>\n";
-        printf "</div>\n";
-    }
+    printf "</div>";
+    printf "</pre>";
+    return;
 }
 
-function buttons(id,    style, copy, collapse, wordwrap) {
+function buttons(id,    style, clipboard, wordwrap) {
+    collapse = "<button onclick='collapse(" id ")' title='Toggle collapse' class='pre-button'>↕</button>";
+    clipboard = "<button onclick='wordwrap(" id ")' title='Toggle word-wrap' class='pre-button'>⏎</button>";
+    wordwrap = "<button onclick='clipboard(" id ")' title='Copy to clipboard' class='pre-button'>📋</button>";
+    return clipboard collapse wordwrap;
+}
 
-    copy_icon = "&#x1F4CB;";
-    collapse_icon = "&#x2195;";
-    wordwrap_icon = "&#x21B5;";
+# TODO: change order: tag, attr, text (<tag attr>text</tag>)
+function make(tag, text, attr) {
+        
+        if (text) {
+            if (attr) {
+                return "<" tag " " attr ">" text "</" tag ">";
+            } else {
+                return "<" tag ">" text "</" tag ">";
+            }
+        } else {
+            if (attr) {
+                return "<" tag " " attr "/>";
+            } else {
+                return "<" tag "/>";
+            }
+        }
+}
 
-    copy = "<button onclick='copy(" id ")' title='Copy'>" copy_icon "</button>";
-    collapse = "<button onclick='collapse(" id ")' title='Collapse'>" collapse_icon "</button>";
-    wordwrap = "<button onclick='wordwrap(" id ")' title='Word wrap'>" wordwrap_icon "</button>";
-    
-    # must return in reverse order
-    return copy collapse wordwrap;
+function snippet(buf) {
+    buf = apply_style(buf, "``", 2, "code");
+    buf = apply_style(buf, "`", 1, "code");
+    return buf;
+}
+
+function formula(buf) {
+    buf = apply_style(buf, "$$", 2, "code");
+    buf = apply_style(buf, "$", 1, "code");
+    return buf;
+}
+
+function underscore(buf) {
+    buf = apply_style(buf, "__", 2, "strong");
+    buf = apply_style(buf, "_", 1, "em");
+    return buf;
+}
+
+function asterisk(buf) {
+    buf = apply_style(buf, "**", 2, "strong");
+    buf = apply_style(buf, "*", 1, "em");
+    return buf;
+}
+
+function deleted(buf) {
+    return apply_style(buf, "~~", 2, "del");
+}
+
+function inserted(buf) {
+    return apply_style(buf, "++", 2, "ins");
+}
+
+function highlighted(buf) {
+    return apply_style(buf, "==", 2, "mark");
+}
+
+function superscript(buf) {
+    return apply_style(buf, "^", 1, "sup");
+}
+
+function subscript(buf) {
+    return apply_style(buf, "~", 1, "sub");
 }
 
 function styles(buf) {
@@ -290,54 +283,9 @@ function styles(buf) {
     return buf;
 }
 
-function snippet(buf) {
-    buf = apply_style(buf, "``", "code");
-    buf = apply_style(buf, "`", "code");
-    return buf;
-}
-
-function formula(buf) {
-    buf = apply_style(buf, "$$", "code");
-    buf = apply_style(buf, "$", "code");
-    return buf;
-}
-
-function underscore(buf) {
-    buf = apply_style(buf, "__", "strong");
-    buf = apply_style(buf, "_", "em");
-    return buf;
-}
-
-function asterisk(buf) {
-    buf = apply_style(buf, "**", "strong");
-    buf = apply_style(buf, "*", "em");
-    return buf;
-}
-
-function deleted(buf) {
-    return apply_style(buf, "~~", "del");
-}
-
-function inserted(buf) {
-    return apply_style(buf, "++", "ins");
-}
-
-function highlighted(buf) {
-    return apply_style(buf, "==", "mark");
-}
-
-function superscript(buf) {
-    return apply_style(buf, "^", "sup");
-}
-
-function subscript(buf) {
-    return apply_style(buf, "~", "sub");
-}
-
-function apply_style(buf, mark, tag,    out, found, rstart, rlength) {
+function apply_style(buf, mark, len, tag,    out, found, rstart, rlength) {
     
     out = "";
-    len = length(mark);
     
     position = index(buf, mark);
     
@@ -355,7 +303,7 @@ function apply_style(buf, mark, tag,    out, found, rstart, rlength) {
         }
         
         out = out substr(buf, 1, rstart -1 - len);
-        out = out make_tag(tag, found);
+        out = out make(tag, found);
         
         buf = substr(buf, rstart + rlength + len);
         position = index(buf, mark);
@@ -401,56 +349,35 @@ function extract(str, start, end, x, y) {
     return substr(str, start + x, (end - start) - y);
 }
 
-# TODO: change order: tag, attr, text (<tag attr>text</tag>)
-function make_tag(tag, text, attr) {
-        
-        if (text) {
-            if (attr) {
-                return "<" tag " " attr ">" text "</" tag ">";
-            } else {
-                return "<" tag ">" text "</" tag ">";
-            }
-        } else {
-            if (attr) {
-                return "<" tag " " attr "/>";
-            } else {
-                return "<" tag "/>";
-            }
-        }
-}
-
-# TODO: change order: href, title, text (<a href title>text</a>)
 function make_link(text, href, title) {
     if (title) {
-        return make_tag("a", text, "href='" href "' title='" title "'");
+        return make("a", text, "href='" href "' title='" title "'");
     } else {
-        return make_tag("a", text, "href='" href "'");
+        return make("a", text, "href='" href "'");
     }
 }
 
-# TODO: change order and names: href, title, alt (<a href title alt/>)
 function make_image(text, href, title)  {
     if (title) {
-        return make_tag("img", "", "alt='" text "' src='" href "' title='" title "'");
+        return make("img", "", "alt='" text "' src='" href "' title='" title "'");
     } else {
-        return make_tag("img", "", "alt='" text "' src='" href "'");
+        return make("img", "", "alt='" text "' src='" href "'");
     }
 }
 
-function make_footnote(ref) {
-    return make_tag("a", "<sup>[" ref "]<sup>", "href='#foot-" ref "'");
+function make_footnote(footnote) {
+    return make("a", "<sup>[" footnote "]<sup>", "href='#foot-" footnote "'");
 }
 
-# TODO: change order: ref, text (<a href="ref">text</a>)
 function make_reflink(text, ref) {
-    return make_tag("a", text, "href='#link-" ref "'");
+    return make("a", text, "href='#link-" ref "'");
 }
 
 # <ftp...>
 # <http...>
 # <https...>
 # <email@...>
-function angles(buf,    start, end, href, out) {
+function diamonds(buf,    start, end, href, out) {
 
     out = "";
     start = index(buf, "<");
@@ -561,7 +488,7 @@ function images(buf, regex,    start, end, mid, t1, t2, temp, text, href, title,
 }
 
 # [^footnote]
-function footnotes(buf, regex,    start, end, ref, out) {
+function footnotes(buf, regex,    start, end, out, footnote) {
 
     out = "";
     start = index(buf, "[^");
@@ -571,8 +498,8 @@ function footnotes(buf, regex,    start, end, ref, out) {
     
         out = out prefix(buf, start);
         
-        ref = extract(buf, start, end, 2, 2);
-        out = out make_footnote(ref);
+        footnote = extract(buf, start, end, 2, 2);
+        out = out make_footnote(footnote);
         
         buf = suffix(buf, start, end);
         start = index(buf, "[^");
@@ -582,6 +509,14 @@ function footnotes(buf, regex,    start, end, ref, out) {
     out = out buf;
     
     return out;
+}
+
+function min(x, y) {
+    return (x <= y) ? x : y;
+}
+
+function max(x, y) {
+    return (x >= y) ? x : y;
 }
 
 # [text][ref]
@@ -643,7 +578,7 @@ function print_header() {
     print "        padding: 1rem;";
     print "        margin: 0 auto;";
     print "        max-width: 50rem;";
-    print "        line-height: 1.5rem;";
+    print "        line-height: 1.8;";
     print "        font-family: sans-serif;";
     print "        color: var(--black);";
     print "    }";
@@ -653,10 +588,10 @@ function print_header() {
     print "    }";
     print "    a, a:visited { color: var(--light-blue); }";
     print "    a:hover, a:focus, a:active { color: var(--dark-blue); }";
-    print "    h1 { font-size: 1.7rem; }";
-    print "    h2 { font-size: 1.4rem; }";
-    print "    h3 { font-size: 1.1rem; }";
-    print "    h4 { font-size: 1.1rem; }";
+    print "    h1 { font-size: 2.0rem; }";
+    print "    h2 { font-size: 1.5rem; }";
+    print "    h3 { font-size: 1.2rem; }";
+    print "    h4 { font-size: 1.2rem; }";
     print "    h5 { font-size: 0.8rem; }";
     print "    h6 { font-size: 0.8rem; }";
     print "    h1, h2 {";
@@ -664,8 +599,9 @@ function print_header() {
     print "        border-bottom: 2px solid var(--gray);";
     print "    }";
     print "    h1, h2, h3, h4, h5, h6 {";
-    print "        font-weight: bold;";
+    print "        line-height: 1.4;";
     print "        font-style: normal;";
+    print "        font-weight: bold;";
     print "        margin: 1.4rem 0 .5rem;";
     print "    }";
     print "    h3, h5 {";
@@ -676,47 +612,36 @@ function print_header() {
     print "        font-weight: normal;";
     print "        font-style: italic;";
     print "    }";
-    print "    div.codeblock {";
+    print "    pre {";
+    print "        overflow-x:auto;";
+    print "        line-height: 1.5;";
     print "        border-radius: .4rem;";
+    print "        font-family: monospace;";
     print "        background-color: var(--gray);";
     print "        border: 1px solid var(--dark-gray);";
     print "    }";
-    print "    div.codeblock-head {";
-    print "        margin: 0rem 0rem;";
-    print "        padding: 0rem 0rem;";
+    print "    div.pre-head {";
+    print "        height: 1.5rem;";
+    print "        padding: 1rem;";
+    print "        font-weight: bold;";
+    print "        padding-top: 0.5rem;";
+    print "        padding-bottom: 0.5rem;";
     print "        border-bottom: 1px solid var(--dark-gray);";
     print "    }";
-    print "    span.codeblock-title {";
-    print "        font-weight: bold;";
-    print "        margin: 0rem 0rem;";
-    print "        padding: 0rem 1rem;";
+    print "    div.pre-body {";
+    print "        padding: 1rem;";
     print "    }";
-    print "    span.codeblock-buttons {";
-    print "        float: right;";
-    print "        font-weight: bold;";
-    print "        margin: 0rem 0rem;";
-    print "        padding: 0rem 1rem;";
-    print "    }";
-    print "    pre.codeblock-body {";
-    print "        overflow-x:auto;";
-    print "        margin: 0rem 0rem;";
-    print "        padding: 1rem 1rem;";
-    print "        line-height: 1.0rem;";
-    print "    }";
-    print "    code.codeblock-code {";
-    print "        font-size: 0.8rem;";
-    print "        margin: 0rem 0rem;";
-    print "        padding: 0rem 0rem;";
-    print "        font-family: monospace;";
+    print "    button.pre-button {";
+    print "        font-size: 100%; float: right;";
     print "    }";
     print "    code {";
+    print "        padding: 0.3rem;";
     print "        border-radius: .2rem;";
-    print "        padding: 0.1rem 0.3rem;";
     print "        font-family: monospace;";
     print "        background-color: var(--gray);";
     print "    }";
     print "    mark {";
-    print "        padding: 0.1rem 0.3rem;";
+    print "        padding: 0.3rem;";
     print "        border-radius: .2rem;";
     print "        background-color: var(--light-yellow);";
     print "    }";
@@ -737,7 +662,7 @@ function print_header() {
     print "</style>";
     
     print "<script>";
-    print "    function copy(id) {";
+    print "    function clipboard(id) {";
     print "        var element = document.getElementById(id);";
     print "        navigator.clipboard.writeText(element.textContent);";
     print "    }";
@@ -784,7 +709,7 @@ function print_footer (    i, ref, href, title, text) {
                 title = href;
             }
             
-            print make_tag("li", title " <a href='" href "' id='link-" ref "'>&#x1F517;</a>");
+            print make("li", title " <a href='" href "' id='link-" ref "'>&#x1F517;</a>");
             
         }
         print "</ol>";
@@ -798,7 +723,7 @@ function print_footer (    i, ref, href, title, text) {
             ref = footnote_ref[i];
             text = footnote_text[i];
             
-            print make_tag("li", text " <a href='#foot-" ref "' id='link-" ref "'>&#x1F517;</a>");
+            print make("li", text " <a href='#foot-" ref "' id='link-" ref "'>&#x1F517;</a>");
             
         }
         print "</ol>";
@@ -880,14 +805,6 @@ function remove_prefix(line, pref) {
     return line;
 }
 
-function min(x, y) {
-    return (x <= y) ? x : y;
-}
-
-function max(x, y) {
-    return (x >= y) ? x : y;
-}
-
 function ltrim(s) { sub(/^[ \t]+/, "", s); return s; }
 function rtrim(s) { sub(/[ \t]+$/, "", s); return s; }
 function trim(s) { return rtrim(ltrim(s)); }
@@ -898,13 +815,249 @@ function slug(str) {
     return tolower(str);
 }
 
-function push_link(ref, href, title, text) {
-    link_count++;
-    link_ref[link_count] = ref;
-    link_href[link_count] = href;
-    link_title[link_count] = title;
-    link_text[link_count] = text;
+#===========================================
+# TABULATIONS
+#===========================================
+
+{
+    gsub("\t", "    ", $0); # replace tabas with 4 spaces
 }
+
+#===========================================
+# BLANK LINES
+#===========================================
+
+# Blank line flag states:
+#  0: not signaling blank line
+# -1: preparing to signal blank line
+#  1: signaling blank line
+
+blank == 1 {
+    blank = 0;
+}
+
+blank == -1 {
+    blank = 1;
+}
+
+/^[ ]*$/ {
+    if (!at("code")) {
+        blank = -1;
+        pop_p();
+        pop_blockquote();
+        next;
+    }
+}
+
+#===========================================
+# BLOCKQUOTE
+#===========================================
+
+function pop_blockquote() {
+
+    if (!at("blockquote")) return;
+
+    lv = level_blockquote();
+    cp = count_prefix($0, blockquote_prefix);
+    
+    n = lv - cp;
+    while (n-- > 0) {
+        if (at("blockquote")) pop();
+    }
+}
+
+$0 !~ blockquote_prefix {
+    pop_blockquote();
+}
+
+$0 ~ blockquote_prefix {
+
+    lv = level_blockquote();
+    cp = count_prefix($0, blockquote_prefix);
+    
+    $0 = remove_prefix($0, blockquote_prefix);
+    
+    if (cp > lv) {
+        n = cp - lv;
+        while (n-- > 0) {
+            pop_p();
+            push("blockquote");
+        }
+    } else {
+        n = lv - cp;
+        while (n-- > 0) {
+            pop();
+        }
+    }
+    
+    if ($0 ~ /^$/) {
+        pop_until("blockquote");
+    }
+}
+
+#===========================================
+# LIST ITENS
+#===========================================
+
+# TODO: add more POSIX compatibility as MAWK doesn't support regex quantifiers {x,y}
+# See: https://unix.stackexchange.com/questions/506119/how-to-specify-regex-quantifiers-with-mawk
+
+function pop_p() {
+    if (!ready()) pop();
+}
+
+function pop_list () {
+
+    if (!at("li")) return;
+
+    lv = level_list();
+    cp = count_indent($0);
+    
+    n = lv - cp;
+    while (n-- > 0) {
+        if (stk[idx-1] == "li") pop();
+        if (at("li")) pop();
+        if (at("ol") || at("ul")) pop();
+    }
+}
+
+function remove_list_indent (line) {
+
+    n = level_list();
+    while (n > 0) {
+        sub(/^[ ][ ][ ][ ]/, "", line);
+        n--;
+    }
+    
+    return line;
+}
+
+$0 !~ ul_prefix && $0 !~ ol_prefix {
+
+    temp = remove_list_indent($0);
+    
+    if (blank > 0) {
+        pop_list();
+    }
+    
+    $0 = temp;
+}
+
+function list_start(line) {
+    sub("^[ ]+", "", line);
+    match(line, "^[0-9]+");
+    return substr(line, RSTART, RLENGTH);
+}
+
+function push_li(tag, start) {
+
+    if (tag == "ol") {
+        if (start == "") {
+            if (!at("ul") && !at("ol")) push(tag);
+        } else {
+            if (!at("ul") && !at("ol")) push(tag, "start='" start "'");
+        }
+    } else {
+        if (!at("ul") && !at("ol")) push(tag);
+    }
+    
+    push("li");
+}
+
+function parse_list_item(tag, pref, start) {
+    
+    lv = level_list();
+    cp = count_indent($0) + 1;
+    
+    $0 = remove_prefix($0, pref);
+
+    if (cp == lv) {
+    
+        pop_p();
+        if (at("li")) pop();
+        push_li(tag);
+        append($0);
+        
+    } else if (cp > lv) {
+        
+        # add levels
+        n = (cp - 1) - lv;
+        while (n-- > 0) {
+            push_li(tag);
+        }
+        
+        push_li(tag, start);
+        append($0);
+        
+    } else if (cp < lv) {
+    
+        # del levels
+        n = lv - cp;
+        while (n-- > 0) {
+            pop_p();
+            if (at("li")) pop();
+            if (at("ol") || at("ul")) pop();
+        }
+        
+        if (at("li")) pop();
+        push_li(tag);
+        append($0);
+    }
+}
+
+$0 ~ ul_prefix {
+    parse_list_item("ul", ul_prefix);
+    next;
+}
+
+$0 ~ ol_prefix {
+
+    # the user specifies
+    # the starting number
+    start = list_start($0);
+
+    parse_list_item("ol", ol_prefix, start);
+    next;
+}
+
+#===========================================
+# CODE BLOCKS
+#===========================================
+
+/^```/ {
+
+    if (!at("code")) {
+    
+        sub(/^`+/, "");
+        title = $0;
+        
+        push("code", "title='" title "'");
+        next;
+    }
+    
+    pop();
+    next;
+}
+
+at("code") {
+    append($0);
+    next;
+}
+
+/^[ ][ ][ ][ ]/ {
+
+    if (!at("pre")) {
+        push("pre");
+    }
+
+    sub("^[ ][ ][ ][ ]", "", $0);
+    append($0);
+    next;
+}
+
+#===========================================
+# HEADING
+#===========================================
 
 # undo last push
 function undo(    tmp) {
@@ -914,108 +1067,38 @@ function undo(    tmp) {
     return tmp;
 }
 
-#===========================================
-# TABULATION
-#===========================================
+/^===+/ && at("p") {
 
-/^\t/ {
-    s = " ";
-    # replace only 1st tab
-    sub(/^\t/, s s s s, $0);
-}
-
-#===========================================
-# CODE BLOCKS
-#===========================================
-
-function unindent() {
-    sub(/^[ ][ ][ ][ ]/, "", $0);
-}
-
-/^```/ {
-
-    if (!at("code")) {
-    
-        sub(/^`+/, "");
-        title = $1;
-        
-        pop();
-        push("code", "title='" title "'");
-        next;
-    }
-    
-    if (at("code")) {
-        pop();
-        next;
-    }
-}
-
-at("code") {
-    buffer($0);
+    # <h1>
+    $0 = undo();
+    push("h1");
+    append($0);
+    pop_p();
     next;
 }
 
-/^[ ][ ][ ][ ]/ {
+/^---+/ && at("p") {
 
-    if (!at("pre")) {
-        push("pre");
-        unindent();
-        buffer($0);
-        next;
-    }
-
-    if (at("pre")) {
-        unindent();
-        buffer($0);
-        next;
-    }
+    # <h2>
+    $0 = undo();
+    push("h2");
+    append($0);
+    pop_p();
+    next;
 }
-
-#===========================================
-# HEADING
-#===========================================
 
 /^[\x23]+[ ]+/ {
-
-    # count header level
-    match($0, /^[\x23]+/);
-    # remove all leading hashes
-    sub(/^[\x23]+[ ]*/, "", $0);
-    # remove all trailing hashes
-    sub(/[ ]*[\x23]+$/, "", $0);
-
-    if (at("root")) {
-        push("h" min(RLENGTH, 6));
-        buffer($0);
-        next;
-    }
     
-    if (at("p")) {
-        pop();
-        push("h" min(RLENGTH, 6));
-        buffer($0);
-        next;
-    }
+    # count hashes
+    match($0, "\x23+")
+    n = RLENGTH > 6 ? 6 : RLENGTH
     
-    if (any("h1,h2,h3,h4,h5,h6")) {
-        pop();
-        push("h" min(RLENGTH, 6));
-        buffer($0);
-        next;
-    }
-}
+    # remove leading hashes
+    $0 = substr($0, n + 1);
 
-/^=+[ ]*$/ && at("p") {
-    unpush();
-    push("h1");
-    pop();
-    next;
-}
-
-/^-+[ ]*$/ && at("p") {
-    unpush();
-    push("h2");
-    pop();
+    pop_p();
+    push("h" n);
+    append($0);
     next;
 }
 
@@ -1024,83 +1107,205 @@ at("code") {
 #===========================================
 
 /^[*_-][*_-][*_-]+[ ]*$/ {
-    
-    if (at("root")) {
-        push("hr");
-        pop();
-        next;
-    }
+    pop_p();
+    push("hr");
+    next;
+}
 
+#===========================================
+# DEFINITION LIST
+#===========================================
+
+# TODO: make definition list multi-level like <li>
+
+/^:/ {
+
+    dd = substr($0, 2);
+    
     if (at("p")) {
-        pop();
-        push("hr");
+        dt = undo();
+        push("dl");
+        push("dt");
+        append(dt);
+        pop_p();
+        push("dd");
+        append(dd);
+        next;
+    }
+    if (at("dd")) {
+        pop_p();
+        push("dd");
+        append(dd);
+        next;
+    }
+}
+
+#===========================================
+# TABLE
+#===========================================
+
+function set_table_aligns(line,    arr, regex, found, l, r, n) {
+
+    delete table_aligns;
+    regex = "(:--[-]+:|:--[-]+|--[-]+:)";
+
+    delete arr; # starts from 2
+    n = split(line, arr, /\|/);
+    for(i = 2; i < n; i++) {
+    
+        if (match(arr[i], regex) > 0) {
+        
+            found = substr(arr[i], RSTART, RLENGTH);
+            
+            l = substr(found, 1, 1);
+            r = substr(found, RLENGTH, 1);
+            
+            if (l == ":" && r == ":") {
+                table_aligns[i] = "center";
+            } else if (l == ":" && r == "-") {
+                table_aligns[i] = "left";
+            } else if (l == "-" && r == ":") {
+                table_aligns[i] = "right";
+            } else {
+                table_aligns[i] = "l:" l " r: " r;
+            }
+        }
+    }
+}
+
+/^[ ]*\|.*\|[ ]*/ {
+    
+    if (!at("table")) {
+    
+        push("table");
+        push("tr");
+        
+        delete arr; # starts from 2
+        n = split($0, arr, /\|/);
+        for(i = 2; i < n; i++) {
+            push("th");
+            append(arr[i]);
+            pop();
+        }
         pop();
         next;
     }
     
-    if (any("h1,h2,h3,h4,h5,h6")) {
-        pop();
-        push("hr");
+    if (at("table")) {
+    
+        if ($0 ~ /^[ ]*\|[ ]*([:]?--[-]+[:]?)[ ]*\|[ ]*/) {
+            set_table_aligns($0);
+            next;
+        }
+    
+        push("tr");
+        
+        delete arr; # starts from 2
+        n = split($0, arr, /\|/);
+        for(i = 2; i < n; i++) {
+        
+            if (table_aligns[i] != "") {
+                push("td", "style='text-align:" table_aligns[i] ";'");
+            } else {
+                push("td");
+            }
+            append(arr[i]);
+            pop();
+            
+        }
         pop();
         next;
     }
 }
 
+#===========================================
+# FOOTNOTE
+#===========================================
+
+function push_footnote(ref, text) {
+    footnote_count++
+    footnote_ref[footnote_count] = ref;
+    footnote_text[footnote_count] = styles(text);
+}
+
+/^[ ]*\[\^[^]]+\][:]/ {
+
+    # [^id]: note
+    if (match($0, /\[\^[^]]+\][:]/) > 0) {
+        
+        ref = substr($0, RSTART + 2, RLENGTH - 4);
+        text = substr($0, RSTART + RLENGTH);
+        
+        push_footnote(ref, text);
+    }
+    next;
+}
 
 #===========================================
-# BLANK
+# (REFERENCE STYLE) LINK
 #===========================================
 
-/^[ ]*$/ {
+# TODO: implement all styles: https://gist.github.com/emedinaa/28ed71b450243aba48accd634679f805
 
-    if (at("root")) {
-        next;
+function push_link(ref, href, title, text) {
+    link_count++;
+    link_ref[link_count] = ref;
+    link_href[link_count] = href;
+    link_title[link_count] = title;
+    link_text[link_count] = text;
+}
+
+/^[ ]*\[[^]]+\][:]/ {
+
+    # [ref]: href
+    # [ref]: href "title"
+    # [ref]: href 'title'
+    # [ref]: href (title)
+    # [ref]: <href> "title"
+    # [ref]: <href> 'title'
+    # [ref]: <href> (title)
+    if (match($0, /\[[^]]+\][:]/) > 0) {
+        
+        ref = substr($0, RSTART + 1, RLENGTH - 3);
+        href = substr($0, RSTART + RLENGTH);
+        
+        if (match(href, "[ ](\"[^\"]*\"|'[^']*'|\\([^\\)]*\\))") > 0) {
+            title = substr(href, RSTART + 2, RLENGTH - 3);
+            href = substr(href, 1, RSTART - 1)
+            
+            # remove '<' '>'.
+            if (match(href, "<[^>]+>") > 0) {
+                href = substr(href, RSTART + 1, RLENGTH - 2);
+            }
+        }
+        
+        # remove leading spaces
+        sub("^[ ]*", "", href);
+        
+        push_link(ref, href, title, title);
     }
-    
-    if (at("p")) {
-        pop();
-        next;
-    }
-    
-    if (at("pre")) {
-        buffer("");
-        next;
-    }
-    
-    if (any("h1,h2,h3,h4,h5,h6")) {
-        pop();
-        next;
-    }
+    next;
 }
 
 #===========================================
 # PARAGRAPH
 #===========================================
 
-/^.+$/ {
+# TODO: transform "<li>text" in "<li><p>text", undoing the previous <li>
 
-    if (at("root")) {
-        push("p");
-        buffer($0);
-        next;
+/^.+$/ {
+    if (ready()) {
+        if (at("li")) {
+            if (blank == 1) {
+                push("p");
+            }
+        } else {
+            push("p");
+        }
     }
     
-    if (at("p")) {
-        buffer($0);
-        next;    
-    }
-    
-    if (at("pre")) {
-        pop();
-        push("p");
-        buffer($0);
-        next;
-    }
-    
-    if (any("h1,h2,h3,h4,h5,h6")) {
-        buffer($0);
-        next;
-    }
+    append($0);
+    next;
 }
 
 #===========================================
@@ -1109,12 +1314,10 @@ at("code") {
 
 END {
 
-    pop_at("p");
-    pop_any("pre,code");
-    pop_any("h1,h2,h3,h4,h5,h6");
+    pop_p();
+    pop_list();
+    pop_blockquote();
     
-    # compatible end of file,
-    # e.g., `diff`, `ed` etc.
-    printf "\n";
+    print_footer();
 }
 

@@ -37,7 +37,8 @@ run_test() {
     sed -E '1,/<hr>/d' "${tmpl}" >> "${html}.temp"
     mv "${html}.temp" "${html}"
     
-    "$PROGRAM_DIR/apkm-html.awk" "${file}" | diff -u - "${html}" \
+    "$PROGRAM_DIR/apkm-html.awk" -vTEST=1 -- "${file}" \
+        | diff -u - "${html}" \
         || exit_error ${numb};
 }
 
@@ -57,7 +58,7 @@ cat <<EOF > /dev/shm/test.html
 This is a template.
 </p>
 EOF
-    
+
 run;
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -113,7 +114,7 @@ This is an H2 in a blockquote
 </blockquote>
 EOF
 
-# run;
+#run;
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -131,6 +132,126 @@ I really like using Markdown.
 <p>
 I think I'll use it to format all of my documents from now on.
 </p>
+EOF
+
+run;
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+# https://daringfireball.net/projects/markdown/syntax
+cat <<EOF > /dev/shm/test.md
+This is an H1
+=============
+
+This is an H2
+-------------
+
+# This is an H1
+
+## This is an H2
+
+###### This is an H6
+
+# This is an H1 #
+
+## This is an H2 ##
+
+### This is an H3 ######
+EOF
+
+cat <<EOF > /dev/shm/test.html
+<h1>
+This is an H1
+</h1>
+<h2>
+This is an H2
+</h2>
+<h1>
+This is an H1
+</h1>
+<h2>
+This is an H2
+</h2>
+<h6>
+This is an H6
+</h6>
+<h1>
+This is an H1
+</h1>
+<h2>
+This is an H2
+</h2>
+<h3>
+This is an H3
+</h3>
+EOF
+
+#run;
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+# https://daringfireball.net/projects/markdown/syntax
+cat <<EOF > /dev/shm/test.md
+This is a normal paragraph:
+
+    This is a code block.
+Here is an example of AppleScript:
+
+    tell application "Foo"
+        beep
+    end tell
+EOF
+
+cat <<EOF > /dev/shm/test.html
+<p>
+This is a normal paragraph:
+</p>
+<pre><code>
+This is a code block.
+</code></pre>
+<p>
+Here is an example of AppleScript:
+</p>
+<pre><code>
+tell application "Foo"
+    beep
+end tell
+</code></pre>
+EOF
+
+run;
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+# https://daringfireball.net/projects/markdown/syntax
+cat <<EOF > /dev/shm/test.md
+This is a normal paragraph:
+\`\`\`
+This is a code block.
+\`\`\`
+Here is an example of AppleScript:
+\`\`\`
+tell application "Foo"
+    beep
+end tell
+\`\`\`
+EOF
+
+cat <<EOF > /dev/shm/test.html
+<p>
+This is a normal paragraph:
+</p>
+<pre><code>
+This is a code block.
+</code></pre>
+<p>
+Here is an example of AppleScript:
+</p>
+<pre><code>
+tell application "Foo"
+    beep
+end tell
+</code></pre>
 EOF
 
 run;
