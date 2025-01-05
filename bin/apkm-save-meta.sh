@@ -20,7 +20,7 @@ last_hash() {
 
 save_meta_fs() {
 
-    local file="${1}"
+    local meta="${1}"
     local uuid="${2}"
     local path="${3}"
     local name="${4}"
@@ -28,8 +28,6 @@ save_meta_fs() {
     local crdt="${6}"
     local updt="${7}"
     local tags="${8}"
-    
-    local meta=`path_meta "${file}" "meta"`;
     
     cat > "${meta}" <<EOF
 uuid=${uuid}
@@ -45,7 +43,7 @@ EOF
 
 save_meta_db() {
 
-    local file="${1}"
+    local meta="${1}"
     local uuid="${2}"
     local path="${3}"
     local name="${4}"
@@ -54,7 +52,7 @@ save_meta_db() {
     local updt="${7}"
     local tags="${8}"
     
-    if [ -f "${file}" ]; then
+    if [ -f "${meta}" ]; then
         echo "INSERT OR REPLACE INTO meta_ values ('${uuid}', '${path}', '${name}', '${hash}', '${crdt}', '${updt}', '${tags}');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
     fi;
 }
@@ -62,15 +60,23 @@ save_meta_db() {
 main() {
 
     local file="${1}"
-    local uuid="`path_uuid "${file}"`"         # UUIDv8 of the file path
-    local path="${file}"                       # Path relative to base directory
-    local name="`basename -s ".md" "${file}"`" # File name without extension
-    local hash="`file_hash "${file}"`"         # File hash
-    local crdt="`now`"                         # Create date
-    local updt="`now`"                         # Update date
-    local tags="`list_tags "${file}"`"         # Comma separated values
-    
     local meta=`path_meta "${file}" "meta"`;
+    
+    local uuid # UUIDv8 of the file path
+    local path # Path relative to base directory
+    local name # File name without extension
+    local hash # File hash
+    local crdt # Create date
+    local updt # Update date
+    local tags # Comma separated values
+    
+    local uuid="`path_uuid "${file}"`"
+    local path="${file}"
+    local name="`basename -s ".md" "${file}"`"
+    local hash="`file_hash "${file}"`"
+    local crdt="`now`"
+    local updt="`now`"
+    local tags="`list_tags "${file}"`"
     
     if [ -f "${meta}" ];
     then
@@ -81,8 +87,8 @@ main() {
         crdt=`grep -E "^crdt=" "${meta}" | head -n 1 | sed "s/^crdt=//"`;
     fi;
     
-    save_meta_fs "${file}" "${uuid}" "${path}" "${name}" "${hash}" "${crdt}" "${updt}" "${tags}"
-    [ $ENABLE_DB -eq 1 ] && save_meta_db "${file}" "${uuid}" "${path}" "${name}" "${hash}" "${crdt}" "${updt}" "${tags}"
+    save_meta_fs "${meta}" "${uuid}" "${path}" "${name}" "${hash}" "${crdt}" "${updt}" "${tags}"
+    [ $ENABLE_DB -eq 1 ] && save_meta_db "${meta}" "${uuid}" "${path}" "${name}" "${hash}" "${crdt}" "${updt}" "${tags}"
 }
 
 main "${file}";
