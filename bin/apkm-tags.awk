@@ -15,6 +15,11 @@
 # Busybox don't support diacritics. Avoid them.
 #
 
+BEGIN {
+    list="";
+    regex="(^|[ ])(#[[:alpha:]][[:alnum:]]+)";
+}
+
 # https://unix.stackexchange.com/q/379385/
 function find_all(str, regex, matches,    n) {
     
@@ -30,13 +35,25 @@ function find_all(str, regex, matches,    n) {
     return n;
 }
 
-$0 !~ "^#" && $0 ~ "#[[:alpha:]][[:alnum:]]+" {
+function word(    tag) {
+    sub(/^[ ]?\x23/, "", tag)
+    return tolower(tag);
+}
 
-    n = find_all($0, "#[[:alpha:]][[:alnum:]]+", tags);
+$0 !~ "^#" && $0 ~ regex {
+
+    n = find_all($0, regex, tags);
     
-
     for (i = 1; i <= n; i++) {
-        printf "%s\n", substr(tags[i], 2);
+        if (!list) {
+            list=word(tags[i])
+        } else {
+            list=list "," word(tags[i])
+        }
     }
+}
+
+END {
+    print list;
 }
 

@@ -19,32 +19,24 @@ save_meta_fs() {
     local meta=`path_meta "${file}" "meta"`
     
     local uuid # UUIDv8 of the file path
-    local road # Path relative to the base directory
-    local name # File name
+    local path # Path relative to the base directory
+    local name # File name without extension
     local hash # File hash
     local crdt # Create date
     local updt # Update date
     local tags # Comma separated values
 
     uuid="`path_uuid "${file}"`"
-    road="${file}"
-    name="`basename "${file}"`"
+    path="${file}"
+    name="`basename --suffix=.md "${file}"`"
     hash="`file_hash "${file}"`"
     crdt="`now`"
     updt="`now`"
-    
-    # read list of tags
-    "$PROGRAM_DIR/apkm-tags.awk" "${file}" | while read -r line; do
-        if [ -z "${tags}" ]; then
-            tags="${line}";
-        else
-            tags="${tags},${line}";
-        fi;
-    done;
+    tags="`list_tags "${file}"`"
 
     cat > "${meta}" <<EOF
 uuid=${uuid}
-path=${road}
+path=${path}
 name=${name}
 hash=${hash}
 crdt=${crdt}
@@ -60,7 +52,7 @@ save_meta_db() {
     local meta=`path_meta "${file}" "meta"`
 
     local uuid # UUIDv8 of the file path
-    local road # Path relative to the base directory
+    local path # Path relative to the base directory
     local name # File name
     local hash # File hash
     local crdt # Create date
@@ -73,7 +65,7 @@ save_meta_db() {
                 uuid=`echo "${line}" | grep "^uuid=" | sed "s/^uuid=//"`
                 ;;
             path=*)
-                road=`echo "${line}" | grep "^path=" | sed "s/^path=//"`
+                path=`echo "${line}" | grep "^path=" | sed "s/^path=//"`
                 ;;
             name=*)
                 name=`echo "${line}" | grep "^name=" | sed "s/^name=//"`
@@ -93,7 +85,7 @@ save_meta_db() {
         esac
     done < "${meta}"
     
-    echo "INSERT OR REPLACE INTO meta_ values ('${uuid}', '${road}', '${name}', '${hash}', '${crdt}', '${updt}', '${tags}');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
+    echo "INSERT OR REPLACE INTO meta_ values ('${uuid}', '${path}', '${name}', '${hash}', '${crdt}', '${updt}', '${tags}');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
 }
 
 main() {

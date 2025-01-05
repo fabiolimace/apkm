@@ -174,6 +174,11 @@ path_html() {
     make_path "${HTML_DIR}" "${1}" "html"
 }
 
+list_tags() {
+    local file="${1}"
+    "$PROGRAM_DIR/apkm-tags.awk" "${file}";
+}
+
 # Remove all "./" and "../" from paths,
 # except "../" in the start of the path.
 # The folder before "../" is also deleted.

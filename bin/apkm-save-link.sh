@@ -27,7 +27,7 @@ save_link_db() {
     local orig # UUIDv8 of the origin file
     local dest # UUIDv8 of the destination file
     local href # Path relative to the origin file (as is) or URL
-    local road # Path relative to the base directory (normalized)
+    local path # Path relative to the base directory (normalized)
     local type # Link type: Internal (I), External (E)
     local brok # Broken link: unknown (0), broken (1)
     
@@ -41,11 +41,11 @@ save_link_db() {
             local status="`http_status "${href}"`"
             if [ "${status}" = "200" ]; then
                 brok="0";
-                road="";
+                path="";
                 dest="";
             else
                 brok="1";
-                road="";
+                path="";
                 dest="";
             fi;
             type="E";
@@ -53,17 +53,17 @@ save_link_db() {
             local norm_href=`normalize_href "${href}"`
             if [ -f "$norm_href" ]; then
                 brok="0";
-                road="$norm_href"
-                dest="`path_uuid "${road}"`";
+                path="$norm_href"
+                dest="`path_uuid "${path}"`";
             else
                 brok="1";
-                road=""
+                path="";
                 dest="";
             fi;
             type="I";
         fi;
         
-        echo "INSERT OR REPLACE INTO link_ values ('${orig}', '${dest}', '${href}', '${road}', '${type}', '${brok}');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
+        echo "INSERT OR REPLACE INTO link_ values ('${orig}', '${dest}', '${href}', '${path}', '${type}', '${brok}');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
         
     done < "${link}"
 }
