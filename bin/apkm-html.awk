@@ -81,7 +81,10 @@ function peek_attr() {
     return stk_attr[idx];
 }
 
-# TODO: refactor
+function peek_spaces() {
+    return stk_spaces[idx];
+}
+
 function peek_value(key,    found) {
     attr = " " peek_attr();
     if (match(attr, "[ ]" key "='[^']*'") > 0) {
@@ -124,30 +127,63 @@ function pop_any(tags) {
     return "";
 }
 
+function container() {
+    return any("ol,ul,li");
+}
+
 function pop() {
 
     if (empty()) {
         return "";
     }
     
-    print_tag();
+    if (container()) {
+        print_buf();
+        close_tag();
+    } else {
+        print_tag();
+    }
     
     return unpush();
 }
 
+function spaces() {
+    match($0, /^[ ]*[^ ]/);
+    # the number of spaces before non-space
+    return (RLENGTH > 0) ? RLENGTH - 1 : RLENGTH;
+}
+
 function push(tag, attr) {
+
+    pop_list(tag);
+
     ++idx;
     stk[idx] = tag;
     stk_attr[idx] = attr;
+    stk_spaces[idx] = spaces();
+    
+    if (container()) {
+        print_buf();
+        open_tag();
+    }
+}
+
+function pop_list(tag) {
+    if (any("ol,ul") && tag != "li") {
+        pop();
+    }
 }
 
 function unpush(    tag) {
+
     tag = peek();
     if (!empty()) {
+        delete stk_spaces[idx];
         delete stk_attr[idx];
         delete stk[idx];
         idx--;
     }
+    
     return tag;
 }
 
@@ -817,6 +853,7 @@ BEGIN {
     idx=0
     stk[0]="root";
     stk_attr[0]="";
+    stk_spaces[0]=0;
 
     blockquote_prefix = "^[ ]*>[ ]?";
     ul_prefix = "^([ ][ ][ ][ ])*([ ]|[ ][ ]|[ ][ ][ ])?[*+-][ ]";
@@ -925,6 +962,102 @@ function undo(    tmp) {
 }
 
 #===========================================
+# BLOCKQUOTES
+#===========================================
+
+function unblockquote() {
+    sub(/^[ ]*>[ ]*/, "", $0);
+}
+
+# one level
+/^[ ]*>[ ]*/ {
+
+    if (at("blockquote")) {
+        unblockquote();
+        buffer($0);
+        next;
+    }
+
+    if (at("root")) {
+        push("blockquote");
+        unblockquote();
+        buffer($0);
+        next;
+    }
+    
+    if (!at("root")) {
+        pop();
+        push("blockquote");
+        unblockquote();
+        buffer($0);
+        next;
+    }
+}
+
+#===========================================
+# LISTS
+#===========================================
+
+/^([ ]*[*+-][ ]+|[ ]*[0-9]+[.][ ]+).+$/ {
+    
+    str = $0; # copy register
+    # detect the type of list
+    if (str ~ /^[ ]*[*+-][ ]+/) {
+        ulol = "ul";
+        sub(/^[ ]*[*+-][ ]+/, "", str);
+    } else {
+        ulol = "ol";
+        sub(/^[ ]*[0-9]+[.][ ]+/, "", str);
+    }
+    
+    # compare spaces
+    a = peek_spaces();
+    b = spaces();
+    
+    if (b > a) {
+        if (at("li")) {
+            push(ulol);
+            push("li");
+            buffer(str);
+            next;
+        }
+    }
+    
+    if (b < a) {
+        if (at("li")) {
+            pop();
+            pop();
+            pop();
+            push("li");
+            buffer(str);
+            next;
+        }
+    }
+
+    if (at("li")) {
+        pop();
+        push("li");
+        buffer(str);
+        next;
+    }
+    
+    if (at("root")) {
+        push(ulol);
+        push("li");
+        buffer(str);
+        next;
+    }
+    
+    if (!at("root")) {
+        pop();
+        push(ulol);
+        push("li");
+        buffer(str);
+        next;
+    }
+}
+
+#===========================================
 # CODE BLOCKS
 #===========================================
 
@@ -933,19 +1066,22 @@ function unindent() {
 }
 
 /^```/ {
-
-    if (!at("code")) {
-    
-        sub(/^`+/, "");
-        title = $1;
-        
-        pop();
-        push("code", "title='" title "'");
-        next;
-    }
     
     if (at("code")) {
         pop();
+        next;
+    }
+
+    if (at("root")) {
+        sub(/^`+/, "");
+        push("code", "title='" $1 "'");
+        next;
+    }
+
+    if (!at("root")) {
+        pop();
+        sub(/^`+/, "");
+        push("code", "title='" $1 "'");
         next;
     }
 }
@@ -957,14 +1093,22 @@ at("code") {
 
 /^[ ][ ][ ][ ]/ {
 
-    if (!at("pre")) {
-        push("pre");
+    if (at("pre")) {
         unindent();
         buffer($0);
         next;
     }
 
-    if (at("pre")) {
+    if (at("root")) {
+        push("pre");
+        unindent();
+        buffer($0);
+        next;
+    }
+    
+    if (!at("root")) {
+        pop();
+        push("pre");
         unindent();
         buffer($0);
         next;
@@ -990,14 +1134,7 @@ at("code") {
         next;
     }
     
-    if (at("p")) {
-        pop();
-        push("h" min(RLENGTH, 6));
-        buffer($0);
-        next;
-    }
-    
-    if (any("h1,h2,h3,h4,h5,h6")) {
+    if (!at("root")) {
         pop();
         push("h" min(RLENGTH, 6));
         buffer($0);
@@ -1023,6 +1160,8 @@ at("code") {
 # HORIZONTAL RULER
 #===========================================
 
+# TODO: fix <hr> between <ul|ol> and <li>
+
 /^[*_-][*_-][*_-]+[ ]*$/ {
     
     if (at("root")) {
@@ -1031,14 +1170,7 @@ at("code") {
         next;
     }
 
-    if (at("p")) {
-        pop();
-        push("hr");
-        pop();
-        next;
-    }
-    
-    if (any("h1,h2,h3,h4,h5,h6")) {
+    if (!at("root")) {
         pop();
         push("hr");
         pop();
@@ -1052,22 +1184,23 @@ at("code") {
 #===========================================
 
 /^[ ]*$/ {
-
-    if (at("root")) {
-        next;
-    }
     
-    if (at("p")) {
-        pop();
-        next;
-    }
+    blank_flag = 1;
     
     if (at("pre")) {
         buffer("");
         next;
     }
+
+    if (at("li")) {
+        next;
+    }
     
-    if (any("h1,h2,h3,h4,h5,h6")) {
+    if (at("root")) {
+        next;
+    }
+
+    if (!at("root")) {
         pop();
         next;
     }
@@ -1079,28 +1212,32 @@ at("code") {
 
 /^.+$/ {
 
-    if (at("root")) {
-        push("p");
-        buffer($0);
-        next;
-    }
-    
     if (at("p")) {
         buffer($0);
         next;    
-    }
-    
-    if (at("pre")) {
-        pop();
-        push("p");
-        buffer($0);
-        next;
     }
     
     if (any("h1,h2,h3,h4,h5,h6")) {
         buffer($0);
         next;
     }
+    
+    if (at("root")) {
+        push("p");
+        buffer($0);
+        next;
+    }
+    
+    if (!at("root")) {
+        pop();
+        push("p");
+        buffer($0);
+        next;
+    }
+}
+
+{
+    blank_flag = 0;
 }
 
 #===========================================
@@ -1110,6 +1247,7 @@ at("code") {
 END {
 
     pop_at("p");
+    pop_at("li");
     pop_any("pre,code");
     pop_any("h1,h2,h3,h4,h5,h6");
     
