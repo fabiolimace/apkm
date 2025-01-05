@@ -54,14 +54,6 @@ updt: # Update date
 tags: # Comma separated values
 ```
 
-The list of links file structure:
-
-```
-1: link1
-2: link2
-3: link3
-```
-
 The metadata file and the list of links file have the same relative path of the markdown files, with an additional suffix. The suffix for metadata is ".meta", while the suffix for list of links is ".link".
 
 Both files are updated before the respective entities in the SQLite tables. The function that updates the SQLite tables reads these files instead of the markdown files. In other words, the SQL database is build and refreshed based on them.

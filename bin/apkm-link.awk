@@ -36,6 +36,7 @@ function find_all_links(str, links,    i, n, matches) {
     for (i = 1; i <= n; i++) {
         match(matches[i], "\\([^)]*\\)");
         links[i] = substr(matches[i], RSTART + 1, RLENGTH - 2);
+        sub(/[ ].*$/, "", links[i]); # remove label after space
     }
     
     return n;

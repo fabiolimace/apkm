@@ -187,9 +187,20 @@ list_tags() {
 path_remove_dots() {
     local file="${1}"
     echo "$file" \
+    | awk '{ sub(/^\.\//, "") ; print }' \
     | awk '{ while ($0 ~ /\/\.\//) { sub(/\/\.\//, "/") }; print }' \
-    | awk '{ while ($0 ~ /\/[^\/]+\/\.\.\//) { sub(/\/[^\/]+\/\.\.\//, "/") }; print }' \
-    | awk '{ sub(/^\.\//, "") ; print }'
+    | awk '{ while ($0 ~ /\/[^\/]+\/\.\.\//) { sub(/\/[^\/]+\/\.\.\//, "/") }; print }';
+}
+
+# Remove double slashes "//" from paths,
+# The leading slash "/" is also deleted.
+# a//b/c/d/file.txt -> a/b/c/d/file.txt
+# /a/b/c/d/file.txt -> a/b/c/d/file.txt
+path_remove_slashes() {
+    local file="${1}"
+    echo "$file" \
+    | awk '{ sub(/^\//, "") ; print }' \
+    | awk '{ gsub(/\/\/+/, "/") ; print }';
 }
 
 make_temp() {

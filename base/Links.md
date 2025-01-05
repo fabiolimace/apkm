@@ -35,6 +35,14 @@ Links
 
 [10]: <http://link10.com/pagth/page.html> (Link to page 10)
 
+[link 11](Paragraphs.md "Link to internal page")
+
+[link 12](/Paragraphs.md "Link to internal page")
+
+[link 13](./Paragraphs.md "Link to internal page")
+
+[link 14](broken/Paragraphs.md "Broken Link to internal page")
+
 <http://example.com>
 
 <ftp://example.com>
