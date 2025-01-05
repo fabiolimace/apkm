@@ -99,7 +99,7 @@ save_meta_db() {
 main() {
     local file="${1}"
     save_meta_fs "${file}"
-    save_meta_db "${file}"
+    [ $ENABLE_DB -eq 1 ] && save_meta_db "${file}"
 }
 
 main "${file}";

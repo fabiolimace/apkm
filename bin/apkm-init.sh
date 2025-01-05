@@ -136,8 +136,8 @@ fi;
 
 main() {
     apkm_init_fs;
-    apkm_init_db;
-#    apkm_init_git;
+    [ $ENABLE_DB -eq 1 ] && apkm_init_db;
+    [ $ENABLE_GIT -eq 1 ] && apkm_init_git;
 }
 
 main;

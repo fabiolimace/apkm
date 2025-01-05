@@ -72,7 +72,7 @@ main() {
     local hash="`file_hash "${file}"`"
     
     save_hist_fs "${file}" "${uuid}" "${updt}" "${hash}"
-    save_hist_db "${file}" "${uuid}" "${updt}" "${hash}"
+    [ $ENABLE_DB -eq 1 ] && save_hist_db "${file}" "${uuid}" "${updt}" "${hash}"
 }
 
 main "${file}";

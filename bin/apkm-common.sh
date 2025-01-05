@@ -8,6 +8,9 @@
 #    . "`dirname "$0"`/apkm-common.sh";
 #
 
+ENABLE_DB=0
+ENABLE_GIT=0
+
 PROGRAM_DIR=`dirname "$0"` # The place where the bash and awk scripts are
 WORKING_DIR=`pwd -P` # The place where the markdown files are
 
@@ -15,7 +18,7 @@ HIST_DIR="$WORKING_DIR/.apkm/hist";
 HTML_DIR="$WORKING_DIR/.apkm/html";
 META_DIR="$WORKING_DIR/.apkm/meta";
 LINK_DIR="$WORKING_DIR/.apkm/link";
-DATABASE="$WORKING_DIR/.apkm/apkm.db"
+DATABASE="$WORKING_DIR/.apkm/apkm.db";
 
 CR="`printf "\r"`" # POSIX <carriage-return>
 LF="`printf "\n"`" # POSIX <newline>
@@ -30,14 +33,18 @@ HASH_REGEX="^[a-f0-9]{40}$";
 DATE_REGEX="^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$"
 UUID_REGEX="^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$";
 
+check_dependency_exists() {
+    local dep=${1};
+    if [ -z "$(which $dep)" ];
+    then
+        echo "Dependency not installed: '$dep'" 1>&2
+        exit 1;
+    fi;
+}
+
 validate_program_deps() {
-    for dep in awk git sqlite3; do
-        if [ -z "$(which $dep)" ];
-        then
-            echo "Dependency not installed: '$dep'" 1>&2
-            exit 1;
-        fi;
-    done;
+    [ $ENABLE_DB -eq 1 ] && check_dependency_exists sqlite3;
+    [ $ENABLE_GIT -eq 1 ] && check_dependency_exists git;
 }
 
 validate_program_path() {
@@ -68,6 +75,15 @@ EOF
 
 }
 
+check_file_exists() {
+    local file=${1};
+    if [ ! -e "$file" ];
+    then
+        echo "File or directory not found: '$file'" 1>&2
+        exit 1;
+    fi;
+}
+
 validate_working_path() {
 
     if [ ! -d "$WORKING_DIR/.apkm" ];
@@ -77,19 +93,15 @@ validate_working_path() {
     fi;
     
     while read -r line; do
-        if [ ! -e "$line" ];
-        then
-            echo "File or directory not found: '$line'" 1>&2
-            exit 1;
-        fi;
+        check_file_exists "$line";
     done <<EOF
 $WORKING_DIR/.apkm/hist
 $WORKING_DIR/.apkm/html
 $WORKING_DIR/.apkm/meta
 $WORKING_DIR/.apkm/link
-$WORKING_DIR/.apkm/apkm.db
-$WORKING_DIR/.apkm/conf.txt
 EOF
+
+    [ $ENABLE_DB -eq 1 ] && check_file_exists "$DATABASE";
 
     if [ "$PWD" != "$WORKING_DIR" ];
     then
@@ -211,12 +223,12 @@ validate() {
         return;
     fi;
     
-    validate_program_deps || exit 1;
-    validate_program_path || exit 1;
+    validate_program_deps;
+    validate_program_path;
     if match "$0" "apkm-init.sh"; then
         :
     else
-        validate_working_path || exit 1;
+        validate_working_path;
     fi;
 }
 

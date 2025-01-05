@@ -102,7 +102,7 @@ normalize_href() {
 main() {
     local file="${1}"
     save_link_fs "${file}"
-    save_link_db "${file}"
+    [ $ENABLE_DB -eq 1 ] && save_link_db "${file}"
 }
 
 main "${file}";
