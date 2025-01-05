@@ -20,6 +20,7 @@ Directory structure
 This is the basic directory structure:
 
 ```
+base
 ├── .apkm
 │   ├── apkm.db
 │   ├── conf.txt
