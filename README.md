@@ -7,10 +7,10 @@ It is a set of tools for managing a collection of markdown files.
 
 Dependencies:
 
-* Git;
-* SQLite;
-* GNU's gawk or Busybox's awk.
-* GNU's bash or Busybox's ash.
+* Git (optional);
+* SQLite (optional);
+* Ubuntu's `mawk`, GNU's `gawk` or Busybox's `awk`.
+* Ubuntu's `dash`, GNU's `bash` or Busybox's `ash`.
 
 You must `cd` to the directory where your markdown collection in order to use the tools.
 
@@ -79,10 +79,10 @@ CREATE TABLE meta_ (
     crdt_ TEXT NOT NULL, -- Create date
     updt_ TEXT NOT NULL, -- Update date
     tags_ TEXT NULL, -- Comma separated values
-    CHECK (hash_ REGEXP '[a-f0-9]{40}'),
-    CHECK (crdt_ REGEXP '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+-][0-9]{2}:[0-9]{2}'),
-    CHECK (updt_ REGEXP '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+-][0-9]{2}:[0-9]{2}'),
-    CHECK (uuid_ REGEXP '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}')
+    CHECK (hash_ REGEXP '^[a-f0-9]{40}$'),
+    CHECK (crdt_ REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$'),
+    CHECK (updt_ REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$'),
+    CHECK (uuid_ REGEXP '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')
 ) STRICT;
 ```
 
@@ -98,8 +98,8 @@ CREATE TABLE link_ (
     brok_ INTEGER DEFAULT 0 NOT NULL, -- Broken link: unknown (0), broken (1)
     CHECK (type_ IN ('I', 'E')),
     CHECK (brok_ IN (0, 1)),
-    CHECK (orig_ REGEXP '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'),
-    CHECK (dest_ REGEXP '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'),
+    CHECK (orig_ REGEXP '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'),
+    CHECK (dest_ REGEXP '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'),
     FOREIGN KEY (orig_) REFERENCES meta_ (uuid_),
     FOREIGN KEY (dest_) REFERENCES meta_ (uuid_),
     PRIMARY KEY (orig_, href_)
@@ -113,38 +113,43 @@ CREATE TABLE hist_ (
     uuid_ TEXT, -- UUIDv8 of the file path
     updt_ TEXT NOT NULL, -- Update date
     hash_ TEXT NOT NULL, -- File hash
-    diff_ TEXT NOT NULL, -- Unified DIFF
-    CHECK (hash_ REGEXP '[a-f0-9]{40}'),
-    CHECK (updt_ REGEXP '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+-][0-9]{2}:[0-9]{2}'),
-    CHECK (uuid_ REGEXP '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'),
+    CHECK (uuid_ REGEXP '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'),
+    CHECK (updt_ REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$'),
+    CHECK (hash_ REGEXP '^[a-f0-9]{40}$'),
     FOREIGN KEY (uuid_) REFERENCES meta_ (uuid_),
-    PRIMARY KEY (uuid_, updt_)
+    PRIMARY KEY (uuid_, updt_, hash_)
 ) STRICT;
 ```
 
-The links table is more detailed than the list of links file.
+Note: the links table is more detailed than the list of links file.
 
 To Do List
 ------------------------------------------------------
 
 This is a list of features to be implemented:
 
-* A function to normalize relative paths.
-* A function to check whether a link is internal or external.
+[x] A function to normalize relative paths.
+[x] A function to check whether a link is internal or external.
     - If a link is internal, `link_.dest_` is a UUID, HREF is relative to the file and PATH is relative to the base directory.
     - If a link is external, `link_.dest_` is NULL and HREF is the URL to an external resource and PATH is NULL.
-* A function to check if internal links are broken, verifying whether the file pointed by the path exists.
-* A function to check if external links may be broken, verifying whether a HTTP request returns 200 (OK) or 404 (NOK).
-* A function to move a file from a path to another, while updating and normalizing links.
-* A function to remove a file from a path to another, while deleting marking links pointing to it as broken.
-* A script to convert markdown texts to HTML files, placing the output into .apkm/html
-* A simple script to serve the HTML files in `.apkm/html` in the local interface at a specific port.
-* A script to generate metadata about markdown texts, placing the output into .apkm/meta
+[x] A function to check if internal links are broken, verifying whether the file pointed by the path exists.
+[x] A function to check if external links may be broken, verifying whether a HTTP request returns 200 (OK) or 404 (NOK).
+[ ] A function to move a file from a path to another, while updating and normalizing links.
+[ ] A function to remove a file from a path to another, while deleting marking links pointing to it as broken.
+[x] A script to convert markdown texts to HTML files, placing the output into .apkm/html
+[x] A simple script to serve the HTML files in `.apkm/html` in the local interface at a specific port.
+[x] A script to generate metadata about markdown texts, placing the output into .apkm/meta
     - The metadata will be saved as files in .apkm/meta.
     - The metadata will also be saved in a SQLite database in .apkm/apkm.db.
-
-Goals:
-* Make it Busybox `awk` and GNU's `gawk`
+[x] Implement a [UUIDv8](https://gist.github.com/fabiolimace/8821bb4635106122898a595e76102d3a)
+[x] History directory to track file changes.
+[ ] An index page that lists all HTML pages.
+[ ] A search box in the top of the index page.
+[ ] A simple bag of words for searching HTML pages.
+[ ] A simple access counter for HTML page access.
+[ ] A simple change history for each HTML page.
+[ ] Tests for Ubuntu's `dash`, GNU's `bash`, and BusyBox's `ash`.
+[ ] Tests for Ubuntu's `mawk`, GNU's `gawk`, and BusyBox's `awk`.
 
 References for Busybox `awk`:
 
