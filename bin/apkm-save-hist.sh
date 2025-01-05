@@ -30,16 +30,15 @@ file_diff() {
 
 save_hist_fs() {
 
-    local file="${1}"
+    local hist="${1}"
     local uuid="${2}"
-    local updt="${3}"
-    local hash="${4}"
-    
-    local hist="`path_hist "${file}"`"
+    local path="${3}"
+    local updt="${4}"
+    local hash="${5}"
     
     if [ ! -f "${hist}" ]; then
-        echo "$HIST_FILE_INFO path=${file}" >> "${hist}"
         echo "$HIST_FILE_INFO uuid=${uuid}" >> "${hist}"
+        echo "$HIST_FILE_INFO path=${path}" >> "${hist}"
     fi;
     
     if [ "${hash}" = "`last_hash "${hist}"`" ]; then
@@ -48,7 +47,7 @@ save_hist_fs() {
     
     cat >> "${hist}" <<EOF
 ${HIST_DIFF_START} ${updt}${HT}${hash}
-`file_diff "${file}"`
+`file_diff "${path}"`
 ${HIST_DIFF_END}
 EOF
 
@@ -56,25 +55,29 @@ EOF
 
 save_hist_db() {
 
-    local file="${1}"
+    local hist="${1}"
     local uuid="${2}"
-    local updt="${3}"
-    local hash="${4}"
+    local path="${3}"
+    local updt="${4}"
+    local hash="${5}"
     
-    if [ -f "${file}" ]; then
-        echo "INSERT OR REPLACE INTO hist_ values ('${uuid}', '${updt}', '${hash}');" | sqlite3 "$DATABASE";
+    if [ -f "${hist}" ]; then
+        echo "INSERT OR REPLACE INTO hist_ values ('${uuid}', '${path}', '${updt}', '${hash}');" | sqlite3 "$DATABASE";
     fi;
 }
 
 main() {
 
     local file="${1}"
+    local hist="`path_hist "${file}"`"
+    
     local uuid="`path_uuid "${file}"`"
+    local path="${file}"
     local updt="`file_updt "${file}"`"
     local hash="`file_hash "${file}"`"
     
-    save_hist_fs "${file}" "${uuid}" "${updt}" "${hash}"
-    [ $ENABLE_DB -eq 1 ] && save_hist_db "${file}" "${uuid}" "${updt}" "${hash}"
+    save_hist_fs "${hist}" "${uuid}" "${path}" "${updt}" "${hash}"
+    [ $ENABLE_DB -eq 1 ] && save_hist_db "${hist}" "${uuid}" "${path}" "${updt}" "${hash}"
 }
 
 main "${file}";

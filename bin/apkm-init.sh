@@ -83,6 +83,7 @@ CREATE TABLE link_ (
 -- Create history table
 CREATE TABLE hist_ (
     uuid_ TEXT, -- UUIDv8 of the file path
+    path_ TEXT NOT NULL, -- Path relative to the base directory
     updt_ TEXT NOT NULL, -- Update date
     hash_ TEXT NOT NULL, -- File hash
     CHECK (uuid_ REGEXP '${UUID_REGEX}'),
