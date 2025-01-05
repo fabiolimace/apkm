@@ -13,6 +13,11 @@
 file="${1}"
 require_file "${file}"
 
+last_hash() {
+    local meta="${1}"
+    grep -E "^hash=" "${meta}" | head -n 1 | sed "s/^hash=//";
+}
+
 save_meta_fs() {
 
     local file="${1}"
@@ -36,6 +41,11 @@ save_meta_fs() {
 
     if [ -f "${meta}" ];
     then
+        if [ "${hash}" = "`last_hash "${meta}"`" ];
+        then
+            return;
+        fi;
+        
         sed -i "s/^hash=.*/hash=${hash}/" "${meta}";
         sed -i "s/^updt=.*/updt=${updt}/" "${meta}";
         sed -i "s/^tags=.*/tags=${tags}/" "${meta}";
