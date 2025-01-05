@@ -13,11 +13,6 @@
 file="${1}"
 require_file "${file}"
 
-last_hash() {
-    local meta="${1}"
-    grep -E "^hash=" "${meta}" | head -n 1 | sed "s/^hash=//";
-}
-
 save_meta_fs() {
 
     local meta="${1}"
@@ -80,10 +75,6 @@ main() {
     
     if [ -f "${meta}" ];
     then
-        if [ "${hash}" = "`last_hash "${meta}"`" ];
-        then
-            return;
-        fi;
         crdt=`grep -E "^crdt=" "${meta}" | head -n 1 | sed "s/^crdt=//"`;
     fi;
     
