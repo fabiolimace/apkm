@@ -72,7 +72,7 @@ CREATE TABLE link_ (
     path_ TEXT NULL, -- Path relative to the base directory (normalized)
     type_ TEXT NOT NULL, -- Link type: Internal (I), External (E)
     brok_ INTEGER DEFAULT 0 NOT NULL, -- Broken link: unknown (0), broken (1)
-    CHECK (type_ IN ('I', 'E')),
+    CHECK (type_ IN ('I', 'E', 'F')),
     CHECK (brok_ IN (0, 1)),
     CHECK (orig_ REGEXP '${UUID_REGEX}'),
     CHECK (dest_ REGEXP '${UUID_REGEX}'),

@@ -19,7 +19,7 @@ save_link_fs() {
     local temp=`make_temp`
     local link=`path_link "${file}"`
     
-    local orig # UUIDv8 of the origin file
+    local orig=`path_uuid "${file}"` # UUIDv8 of the origin file
     local dest # UUIDv8 of the destination file
     local href # Path relative to the origin file (as is) or URL
     local path # Path relative to the base directory (normalized)
@@ -28,8 +28,7 @@ save_link_fs() {
     
     "$PROGRAM_DIR/apkm-link.awk" "${file}" | while read -r line; do
         
-        href="$line"
-        orig="`path_uuid "${file}"`"
+        href="$line";
         
         if match "${href}" "https?:\/\/";
         then
@@ -60,7 +59,7 @@ save_link_fs() {
             type="I";
         fi;
         
-        echo -e "${orig}\t${dest}\t${href}\t${path}\t${type}\t${brok}" >> "${temp}";
+        printf "${orig}\t${dest}\t${href}\t${path}\t${type}\t${brok}\n" >> "${temp}";
         
     done;
     
@@ -74,47 +73,25 @@ save_link_db() {
     local file="${1}"
     local link=`path_link "${file}"`
     
-    local orig # UUIDv8 of the origin file
+    local orig=`path_uuid "${file}"` # UUIDv8 of the origin file
     local dest # UUIDv8 of the destination file
     local href # Path relative to the origin file (as is) or URL
     local path # Path relative to the base directory (normalized)
-    local type # Link type: Internal (I), External (E)
+    local type # Link type: Internal (I), External (E), Fragment (F)
     local brok # Broken link: unknown (0), broken (1)
+    
+    echo "DELETE FROM link_ WHERE orig_ = '${orig}';" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
     
     while read -r line; do
         
-        href="$line"
-        orig="`path_uuid "${file}"`"
+        orig=`echo "${line}" | awk -F "\t" '{ print $1 }'`
+        dest=`echo "${line}" | awk -F "\t" '{ print $2 }'`
+        href=`echo "${line}" | awk -F "\t" '{ print $3 }'`
+        path=`echo "${line}" | awk -F "\t" '{ print $4 }'`
+        type=`echo "${line}" | awk -F "\t" '{ print $5 }'`
+        brok=`echo "${line}" | awk -F "\t" '{ print $6 }'`
         
-        if match "${href}" "https?:\/\/";
-        then
-            local status="`http_status "${href}"`"
-            if [ "${status}" = "200" ]; then
-                brok="0";
-            else
-                brok="1";
-            fi;
-            dest="";
-            path="";
-            type="E";
-        elif match "${href}" "^#"; then
-            brok="0"; # TODO: check if the fragment is exists in the current file
-            dest="";
-            path="";
-            type="F";
-        else
-            local norm_href=`normalize_href "${href}"`
-            if [ -f "$norm_href" ]; then
-                brok="0";
-                dest="`path_uuid "${path}"`";
-            else
-                brok="1";
-                dest="";
-            fi;
-            path="$norm_href";
-            type="I";
-        fi;
-        
+        echo "INSERT OR REPLACE INTO link_ values ('${orig}', '${dest}', '${href}', '${path}', '${type}', '${brok}');" | sed "s/''/NULL/g";
         echo "INSERT OR REPLACE INTO link_ values ('${orig}', '${dest}', '${href}', '${path}', '${type}', '${brok}');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
         
     done < "${link}"
