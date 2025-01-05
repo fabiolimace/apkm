@@ -34,6 +34,13 @@ save_meta_fs() {
     updt="`now`"
     tags="`list_tags "${file}"`"
 
+    if [ -f "${meta}" ];
+    then
+        sed -i "s/^hash=.*/hash=${hash}/" "${meta}";
+        sed -i "s/^updt=.*/updt=${updt}/" "${meta}";
+        sed -i "s/^tags=.*/tags=${tags}/" "${meta}";
+    else
+
     cat > "${meta}" <<EOF
 uuid=${uuid}
 path=${path}
@@ -44,6 +51,7 @@ updt=${updt}
 tags=${tags}
 EOF
 
+    fi;
 }
 
 save_meta_db() {
