@@ -133,26 +133,9 @@ file_hash() {
     sha1sum "${file}" | head -c 40
 }
 
-path_hash() {
-    local file="${1}"
-    echo -n "${file}" | sha1sum | head -c 40
-}
-
-file_uuid() {
-    local file="${1}"
-    local hash=`file_hash "$file"`
-    uuid "$hash"
-}
-
 path_uuid() {
-    local file="${1}"
-    local hash=`path_hash "$file"`
-    uuid "$hash"
-}
-
-uuid() {
-    local hash="${1}"
-    # generate a UUIDv8 using the first 32 chars of the file hash
+    local path="${1}"
+    local hash=`echo -n "${path}" | sha256sum`;
     echo "${hash}" | awk '{ print substr($0,1,8) "-" substr($0,9,4) "-8" substr($0,14,3) "-8" substr($0,18,3) "-" substr($0,21,12) }'
 }
 
