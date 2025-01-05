@@ -91,7 +91,6 @@ save_link_db() {
         type=`echo "${line}" | awk -F "\t" '{ print $5 }'`
         brok=`echo "${line}" | awk -F "\t" '{ print $6 }'`
         
-        echo "INSERT OR REPLACE INTO link_ values ('${orig}', '${dest}', '${href}', '${path}', '${type}', '${brok}');" | sed "s/''/NULL/g";
         echo "INSERT OR REPLACE INTO link_ values ('${orig}', '${dest}', '${href}', '${path}', '${type}', '${brok}');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
         
     done < "${link}"

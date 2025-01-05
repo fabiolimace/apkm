@@ -61,7 +61,9 @@ save_hist_db() {
     local updt="${3}"
     local hash="${4}"
     
-    echo "INSERT OR REPLACE INTO hist_ values ('${uuid}', '${updt}', '${hash}');" | sqlite3 "$DATABASE";
+    if [ -f "${file}" ]; then
+        echo "INSERT OR REPLACE INTO hist_ values ('${uuid}', '${updt}', '${hash}');" | sqlite3 "$DATABASE";
+    fi;
 }
 
 main() {

@@ -21,36 +21,16 @@ last_hash() {
 save_meta_fs() {
 
     local file="${1}"
-    local meta=`path_meta "${file}" "meta"`
+    local uuid="${2}"
+    local path="${3}"
+    local name="${4}"
+    local hash="${5}"
+    local crdt="${6}"
+    local updt="${7}"
+    local tags="${8}"
     
-    local uuid # UUIDv8 of the file path
-    local path # Path relative to the base directory
-    local name # File name without extension
-    local hash # File hash
-    local crdt # Create date
-    local updt # Update date
-    local tags # Comma separated values
-
-    uuid="`path_uuid "${file}"`"
-    path="${file}"
-    name="`basename --suffix=.md "${file}"`"
-    hash="`file_hash "${file}"`"
-    crdt="`now`"
-    updt="`now`"
-    tags="`list_tags "${file}"`"
-
-    if [ -f "${meta}" ];
-    then
-        if [ "${hash}" = "`last_hash "${meta}"`" ];
-        then
-            return;
-        fi;
-        
-        sed -i "s/^hash=.*/hash=${hash}/" "${meta}";
-        sed -i "s/^updt=.*/updt=${updt}/" "${meta}";
-        sed -i "s/^tags=.*/tags=${tags}/" "${meta}";
-    else
-
+    local meta=`path_meta "${file}" "meta"`;
+    
     cat > "${meta}" <<EOF
 uuid=${uuid}
 path=${path}
@@ -61,55 +41,48 @@ updt=${updt}
 tags=${tags}
 EOF
 
-    fi;
 }
 
 save_meta_db() {
 
     local file="${1}"
-    local meta=`path_meta "${file}" "meta"`
-
-    local uuid # UUIDv8 of the file path
-    local path # Path relative to the base directory
-    local name # File name
-    local hash # File hash
-    local crdt # Create date
-    local updt # Update date
-    local tags # Comma separated values
+    local uuid="${2}"
+    local path="${3}"
+    local name="${4}"
+    local hash="${5}"
+    local crdt="${6}"
+    local updt="${7}"
+    local tags="${8}"
     
-    while read -r line; do
-        case "${line}" in
-            uuid=*)
-                uuid=`echo "${line}" | grep "^uuid=" | sed "s/^uuid=//"`
-                ;;
-            path=*)
-                path=`echo "${line}" | grep "^path=" | sed "s/^path=//"`
-                ;;
-            name=*)
-                name=`echo "${line}" | grep "^name=" | sed "s/^name=//"`
-                ;;
-            hash=*)
-                hash=`echo "${line}" | grep "^hash=" | sed "s/^hash=//"`
-                ;;
-            crdt=*)
-                crdt=`echo "${line}" | grep "^crdt=" | sed "s/^crdt=//"`
-                ;;
-            updt=*)
-                updt=`echo "${line}" | grep "^updt=" | sed "s/^updt=//"`
-                ;;
-            tags=*)
-                tags=`echo "${line}" | grep "^tags=" | sed "s/^tags=//"`
-                ;;
-        esac
-    done < "${meta}"
-    
-    echo "INSERT OR REPLACE INTO meta_ values ('${uuid}', '${path}', '${name}', '${hash}', '${crdt}', '${updt}', '${tags}');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
+    if [ -f "${file}" ]; then
+        echo "INSERT OR REPLACE INTO meta_ values ('${uuid}', '${path}', '${name}', '${hash}', '${crdt}', '${updt}', '${tags}');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
+    fi;
 }
 
 main() {
+
     local file="${1}"
-    save_meta_fs "${file}"
-    [ $ENABLE_DB -eq 1 ] && save_meta_db "${file}"
+    local uuid="`path_uuid "${file}"`"         # UUIDv8 of the file path
+    local path="${file}"                       # Path relative to base directory
+    local name="`basename -s ".md" "${file}"`" # File name without extension
+    local hash="`file_hash "${file}"`"         # File hash
+    local crdt="`now`"                         # Create date
+    local updt="`now`"                         # Update date
+    local tags="`list_tags "${file}"`"         # Comma separated values
+    
+    local meta=`path_meta "${file}" "meta"`;
+    
+    if [ -f "${meta}" ];
+    then
+        if [ "${hash}" = "`last_hash "${meta}"`" ];
+        then
+            return;
+        fi;
+        crdt=`grep -E "^crdt=" "${meta}" | head -n 1 | sed "s/^crdt=//"`;
+    fi;
+    
+    save_meta_fs "${file}" "${uuid}" "${path}" "${name}" "${hash}" "${crdt}" "${updt}" "${tags}"
+    [ $ENABLE_DB -eq 1 ] && save_meta_db "${file}" "${uuid}" "${path}" "${name}" "${hash}" "${crdt}" "${updt}" "${tags}"
 }
 
 main "${file}";
