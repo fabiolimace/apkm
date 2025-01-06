@@ -45,9 +45,11 @@ normalize_href() {
 main() {
 
     local file="${1}"
-    local link=`path_link "${file}"`
     
-    local orig=`path_uuid "${file}"` # UUIDv8 of the origin file
+    local uuid=`path_uuid "${file}"`;
+    local link=`make_link "${uuid}"`;
+    
+    local orig # UUIDv8 of the origin file
     local dest # UUIDv8 of the destination file
     local href # Path relative to the origin file (as is) or URL
     local path # Path relative to the base directory (normalized)
@@ -56,7 +58,8 @@ main() {
     
     "$PROGRAM_DIR/apkm-link.awk" "${file}" | while read -r line; do
         
-        href="$line";
+        href="${line}";
+        orig="${uuid}";
         
         if match "${href}" "https?:\/\/";
         then

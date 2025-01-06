@@ -11,10 +11,8 @@
 PROGRAM_DIR=`dirname "$0"` # The place where the bash and awk scripts are
 WORKING_DIR=`pwd -P` # The place where the markdown files are
 
-HIST_DIR="$WORKING_DIR/.apkm/hist";
 HTML_DIR="$WORKING_DIR/.apkm/html";
-META_DIR="$WORKING_DIR/.apkm/meta";
-LINK_DIR="$WORKING_DIR/.apkm/link";
+DATA_DIR="$WORKING_DIR/.apkm/data";
 
 CR="`printf "\r"`" # POSIX <carriage-return>
 LF="`printf "\n"`" # POSIX <newline>
@@ -90,10 +88,8 @@ validate_working_path() {
     while read -r line; do
         check_file_exists "$line";
     done <<EOF
-$WORKING_DIR/.apkm/hist
-$WORKING_DIR/.apkm/html
-$WORKING_DIR/.apkm/meta
-$WORKING_DIR/.apkm/link
+$HTML_DIR
+$DATA_DIR
 EOF
 
     if [ "$PWD" != "$WORKING_DIR" ];
@@ -151,20 +147,28 @@ make_path() {
     path_remove_dots "$base/$file.$suff"
 }
 
-path_meta() {
-    make_path "${META_DIR}" "${1}" "meta"
+make_data() {
+    make_path "${DATA_DIR}" "${1}" "${2}"
 }
 
-path_link() {
-    make_path "${LINK_DIR}" "${1}" "link"
+make_meta() {
+    local uuid="${1}"
+    make_path "${DATA_DIR}" "${uuid}" "meta"
 }
 
-path_hist() {
-    make_path "${HIST_DIR}" "${1}" "hist"
+make_hist() {
+    local uuid="${1}"
+    make_path "${DATA_DIR}" "${uuid}" "hist"
 }
 
-path_html() {
-    make_path "${HTML_DIR}" "${1}" "html"
+make_link() {
+    local uuid="${1}"
+    make_path "${DATA_DIR}" "${uuid}" "link"
+}
+
+make_html() {
+    local file="${1}"
+    make_path "${HTML_DIR}" "${file}" "html"
 }
 
 list_tags() {

@@ -21,7 +21,9 @@ file_changed() {
 
     local file="${1}"
     local hash=`file_hash "${file}"`
-    local meta=`path_meta "${file}" "meta"`;
+    local uuid=`path_uuid "${file}"`;
+    local meta=`make_meta "${uuid}"`;
+    
     local result=1;
     
     if [ -f "${meta}" ];

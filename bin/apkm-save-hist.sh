@@ -26,9 +26,10 @@ file_diff() {
 main() {
 
     local file="${1}"
-    local hist="`path_hist "${file}"`"
     
-    local uuid="`path_uuid "${file}"`"
+    local uuid=`path_uuid "${file}"`;
+    local hist=`make_hist "${uuid}"`;
+    
     local path="${file}"
     local updt="`file_updt "${file}"`"
     local hash="`file_hash "${file}"`"
@@ -40,7 +41,7 @@ main() {
     
     cat >> "${hist}" <<EOF
 ${HIST_DIFF_START} ${updt}${HT}${hash}
-`file_diff "${path}"`
+`file_diff "${hist}"`
 ${HIST_DIFF_END}
 EOF
 

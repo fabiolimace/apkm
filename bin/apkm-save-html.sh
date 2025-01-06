@@ -15,7 +15,7 @@ require_file "${file}";
 
 main() {
     local file="${1}"
-    local html=`path_html "${file}"`
+    local html=`make_html "${file}"`
     mkdir -p "`dirname "${html}"`"
     "$PROGRAM_DIR/apkm-html.awk" "${file}" > "${html}"
 }

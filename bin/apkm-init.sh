@@ -26,10 +26,8 @@ apkm_init_fs() {
     echo "mkdir -p \"$WORKING_DIR/.apkm\""
     
     mkdir -p "$WORKING_DIR/.apkm"
-    mkdir -p "$WORKING_DIR/.apkm/hist"
     mkdir -p "$WORKING_DIR/.apkm/html"
-    mkdir -p "$WORKING_DIR/.apkm/meta"
-    mkdir -p "$WORKING_DIR/.apkm/link"
+    mkdir -p "$WORKING_DIR/.apkm/data"
     
 cat > "$WORKING_DIR/.apkm/conf.txt" <<EOF
 busybox.httpd.port=127.0.0.1:9000

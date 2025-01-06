@@ -16,9 +16,10 @@ require_file "${file}"
 main() {
 
     local file="${1}"
-    local meta=`path_meta "${file}" "meta"`;
     
-    local uuid # UUIDv8 of the file path
+    local uuid=`path_uuid "${file}"`;
+    local meta=`make_meta "${uuid}"`;
+    
     local path # Path relative to base directory
     local name # File name without extension
     local hash # File hash
