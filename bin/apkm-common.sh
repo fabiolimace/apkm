@@ -8,8 +8,6 @@
 #    . "`dirname "$0"`/apkm-common.sh";
 #
 
-ENABLE_GIT=0
-
 PROGRAM_DIR=`dirname "$0"` # The place where the bash and awk scripts are
 WORKING_DIR=`pwd -P` # The place where the markdown files are
 

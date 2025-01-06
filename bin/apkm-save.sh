@@ -10,11 +10,11 @@
 
 . "`dirname "$0"`/apkm-common.sh";
 
-# find .md and .txt files
-find_regex=".*.\(md\|txt\)$";
+# find only .md files
+find_regex=".*.\(md\)$";
 
-# ignore .apkm and .git folders
-ignore_regex="\\.\(apkm\|git\)";
+# ignore the .apkm folder
+ignore_regex="\\.\(apkm\)";
 
 
 file_changed() {

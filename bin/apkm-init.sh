@@ -3,10 +3,6 @@
 #
 # Initializes the APKM in the current directory.
 #
-# Also:
-#
-# *   Initializes a GIT repository, commiting all existing markdown files.
-#
 # Usage:
 #
 #     # Backup!
@@ -16,7 +12,6 @@
 #
 #     # Be careful and backup!
 #     rm -rf DIRECTORY/.apkm
-#     rm -rf DIRECTORY/.git
 #
 # Where DIRECTORY is where this init script was executed.
 #
@@ -42,26 +37,6 @@ EOF
 
 }
 
-apkm_init_git() {
-    
-    echo "----------------------"
-    echo "Init GIT"
-    echo "----------------------"
-    
-    git init --initial-branch=main
-    git config user.name "apkm"
-    git config user.email "apkm@example.com"
-    find "$WORKING_DIR/" -type f -name "*.md" -exec git add {} \;
-    git commit -m "[apkm] init"
-
-cat > .gitignore <<EOF
-.git/*
-.apkm/*
-.gitignore
-EOF
-
-}
-
 if [ ! -d "$WORKING_DIR" ];
 then
     echo "Base directory not found."
@@ -74,16 +49,8 @@ then
     exit 1;
 fi;
 
-# TODO: remove it after file history is ready
-if [ -d "$WORKING_DIR/.git" ];
-then
-    echo "GIT already initialized in this directory." 1>&2;
-    exit 1;
-fi;
-
 main() {
     apkm_init_fs;
-    [ $ENABLE_GIT -eq 1 ] && apkm_init_git;
 }
 
 main;
