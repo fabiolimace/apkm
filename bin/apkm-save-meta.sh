@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Saves metadata in `meta` folder and `apkm.db`.
+# Saves metadata in `meta` folder.
 #
 # Usage:
 #
@@ -12,45 +12,6 @@
 
 file="${1}"
 require_file "${file}"
-
-save_meta_fs() {
-
-    local meta="${1}"
-    local uuid="${2}"
-    local path="${3}"
-    local name="${4}"
-    local hash="${5}"
-    local crdt="${6}"
-    local updt="${7}"
-    local tags="${8}"
-    
-    cat > "${meta}" <<EOF
-uuid=${uuid}
-path=${path}
-name=${name}
-hash=${hash}
-crdt=${crdt}
-updt=${updt}
-tags=${tags}
-EOF
-
-}
-
-save_meta_db() {
-
-    local meta="${1}"
-    local uuid="${2}"
-    local path="${3}"
-    local name="${4}"
-    local hash="${5}"
-    local crdt="${6}"
-    local updt="${7}"
-    local tags="${8}"
-    
-    if [ -f "${meta}" ]; then
-        echo "INSERT OR REPLACE INTO meta_ values ('${uuid}', '${path}', '${name}', '${hash}', '${crdt}', '${updt}', '${tags}');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
-    fi;
-}
 
 main() {
 
@@ -78,8 +39,16 @@ main() {
         crdt=`grep -E "^crdt=" "${meta}" | head -n 1 | sed "s/^crdt=//"`;
     fi;
     
-    save_meta_fs "${meta}" "${uuid}" "${path}" "${name}" "${hash}" "${crdt}" "${updt}" "${tags}"
-    [ $ENABLE_DB -eq 1 ] && save_meta_db "${meta}" "${uuid}" "${path}" "${name}" "${hash}" "${crdt}" "${updt}" "${tags}"
+    cat > "${meta}" <<EOF
+uuid=${uuid}
+path=${path}
+name=${name}
+hash=${hash}
+crdt=${crdt}
+updt=${updt}
+tags=${tags}
+EOF
+
 }
 
 main "${file}";

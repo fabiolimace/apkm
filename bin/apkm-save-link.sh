@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Saves links in `link` folder and `apkm.db`.
+# Saves links in `link` folder.
 #
 # Usage:
 #
@@ -13,48 +13,6 @@
 file="${1}"
 temp=`make_temp`
 require_file "${file}";
-
-save_link_fs() {
-
-    local link="${1}"
-    local orig="${2}"
-    local dest="${3}"
-    local href="${4}"
-    local path="${5}"
-    local type="${6}"
-    local brok="${7}"
-    
-    sort "${temp}" | uniq > "${link}";
-}
-
-
-save_link_db() {
-
-    local link="${1}"
-    local orig="${2}"
-    local dest="${3}"
-    local href="${4}"
-    local path="${5}"
-    local type="${6}"
-    local brok="${7}"
-    
-    if [ -f "${link}" ]; then
-        echo "DELETE FROM link_ WHERE orig_ = '${orig}';" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
-        
-        while read -r line; do
-            
-            orig=`echo "${line}" | awk -F "\t" '{ print $1 }'`
-            dest=`echo "${line}" | awk -F "\t" '{ print $2 }'`
-            href=`echo "${line}" | awk -F "\t" '{ print $3 }'`
-            path=`echo "${line}" | awk -F "\t" '{ print $4 }'`
-            type=`echo "${line}" | awk -F "\t" '{ print $5 }'`
-            brok=`echo "${line}" | awk -F "\t" '{ print $6 }'`
-            
-            echo "INSERT OR REPLACE INTO link_ values ('${orig}', '${dest}', '${href}', '${path}', '${type}', '${brok}');" | sed "s/''/NULL/g" | sqlite3 "$DATABASE";
-            
-        done < "${link}"
-    fi;
-}
 
 http_status() {
     local href="$1"
@@ -133,8 +91,7 @@ main() {
         
     done;
     
-    save_link_fs "${link}" "${orig}" "${dest}" "${href}" "${path}" "${type}" "${brok}"
-    [ $ENABLE_DB -eq 1 ] && save_link_db "${link}" "${orig}" "${dest}" "${href}" "${path}" "${type}" "${brok}"
+    sort "${temp}" | uniq > "${link}";
     
     rm -f "${temp}";
 }

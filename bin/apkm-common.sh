@@ -8,7 +8,6 @@
 #    . "`dirname "$0"`/apkm-common.sh";
 #
 
-ENABLE_DB=0
 ENABLE_GIT=0
 
 PROGRAM_DIR=`dirname "$0"` # The place where the bash and awk scripts are
@@ -18,7 +17,6 @@ HIST_DIR="$WORKING_DIR/.apkm/hist";
 HTML_DIR="$WORKING_DIR/.apkm/html";
 META_DIR="$WORKING_DIR/.apkm/meta";
 LINK_DIR="$WORKING_DIR/.apkm/link";
-DATABASE="$WORKING_DIR/.apkm/apkm.db";
 
 CR="`printf "\r"`" # POSIX <carriage-return>
 LF="`printf "\n"`" # POSIX <newline>
@@ -43,8 +41,7 @@ check_dependency_exists() {
 }
 
 validate_program_deps() {
-    [ $ENABLE_DB -eq 1 ] && check_dependency_exists sqlite3;
-    [ $ENABLE_GIT -eq 1 ] && check_dependency_exists git;
+    check_dependency_exists awk;
 }
 
 validate_program_path() {
@@ -100,8 +97,6 @@ $WORKING_DIR/.apkm/html
 $WORKING_DIR/.apkm/meta
 $WORKING_DIR/.apkm/link
 EOF
-
-    [ $ENABLE_DB -eq 1 ] && check_file_exists "$DATABASE";
 
     if [ "$PWD" != "$WORKING_DIR" ];
     then
