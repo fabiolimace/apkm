@@ -51,6 +51,7 @@ main() {
             "$PROGRAM_DIR/apkm-save-link.sh" "$file";
             "$PROGRAM_DIR/apkm-save-hist.sh" "$file";
             "$PROGRAM_DIR/apkm-save-html.sh" "$file";
+            "$PROGRAM_DIR/apkm-save-stat.sh" "$file";
         fi;
     done;
 }
