@@ -36,6 +36,7 @@ busybox_httpd_stop() {
 
 busybox_httpd_start() {
     local port=`busybox_httpd_port`;
+#    busybox httpd -p "$port" -h "$PROGRAM_DIR/../www/"
     busybox httpd -p "$port" -h "$WORKING_DIR/.apkm/html/"
     echo Listening: "http://$port"
 }
@@ -47,3 +48,8 @@ main() {
 
 main;
 
+# https://datatracker.ietf.org/doc/html/rfc3875
+# https://www.vivaolinux.com.br/artigo/Introducao-a-CGI-com-a-RFC-3875
+# https://gist.github.com/stokito/a9a2732ffc7982978a16e40e8d063c8f
+# https://github.com/Mikepicker/cgiblog
+# https://medium.com/@Mikepicker/no-framework-blog-for-fun-and-profit-using-bash-cgi-cbb99cf5366b

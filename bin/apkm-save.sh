@@ -22,7 +22,7 @@ file_changed() {
     local file="${1}"
     local hash=`file_hash "${file}"`
     local uuid=`path_uuid "${file}"`;
-    local meta=`make_meta "${uuid}"`;
+    local meta=`make_meta "${file}"`;
     
     local result=1;
     

@@ -87,7 +87,7 @@ main() {
     local hash="${3}"
     
     local uuid=`path_uuid "${file}"`;
-    local hist=`make_hist "${uuid}"`;
+    local hist=`make_hist "${file}"`;
     
     require_file "${hist}" "No history for file '${file}'."
     

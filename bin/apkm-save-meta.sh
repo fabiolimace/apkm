@@ -18,7 +18,7 @@ main() {
     local file="${1}"
     
     local uuid=`path_uuid "${file}"`;
-    local meta=`make_meta "${uuid}"`;
+    local meta=`make_meta "${file}"`;
     
     local path # Path relative to base directory
     local name # File name without extension

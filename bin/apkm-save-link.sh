@@ -47,7 +47,7 @@ main() {
     local file="${1}"
     
     local uuid=`path_uuid "${file}"`;
-    local link=`make_link "${uuid}"`;
+    local link=`make_link "${file}"`;
     
     local orig # UUIDv8 of the origin file
     local dest # UUIDv8 of the destination file

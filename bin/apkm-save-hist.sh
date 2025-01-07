@@ -28,7 +28,7 @@ main() {
     local file="${1}"
     
     local uuid=`path_uuid "${file}"`;
-    local hist=`make_hist "${uuid}"`;
+    local hist=`make_hist "${file}"`;
     
     local path="${file}"
     local updt="`file_updt "${file}"`"

@@ -140,35 +140,44 @@ path_uuid() {
     echo "${hash}" | awk '{ print substr($0,1,8) "-" substr($0,9,4) "-8" substr($0,14,3) "-8" substr($0,18,3) "-" substr($0,21,12) }'
 }
 
+make_meta() {
+    local file="${1}"
+    make_data "${file}" "meta"
+}
+
+make_hist() {
+    local file="${1}"
+    make_data "${file}" "hist"
+}
+
+make_link() {
+    local file="${1}"
+    make_data "${file}" "link"
+}
+
+make_stat() {
+    local file="${1}"
+    make_data "${file}" "stat"
+}
+
+make_data() {
+    local file="${1}";
+    local suff="${2}";
+    local uuid=`path_uuid "${file}"`;
+    make_path "${DATA_DIR}" "${uuid}" "${suff}"
+}
+
+make_html() {
+    local file="${1}"
+    local name="`basename -s.md "${file}"`"
+    make_path "${HTML_DIR}" "${name}" "html"
+}
+
 make_path() {
     local base="${1}"
     local file="${2}"
     local suff="${3}"
     path_remove_dots "$base/$file.$suff"
-}
-
-make_data() {
-    make_path "${DATA_DIR}" "${1}" "${2}"
-}
-
-make_meta() {
-    local uuid="${1}"
-    make_path "${DATA_DIR}" "${uuid}" "meta"
-}
-
-make_hist() {
-    local uuid="${1}"
-    make_path "${DATA_DIR}" "${uuid}" "hist"
-}
-
-make_link() {
-    local uuid="${1}"
-    make_path "${DATA_DIR}" "${uuid}" "link"
-}
-
-make_html() {
-    local file="${1}"
-    make_path "${HTML_DIR}" "${file}" "html"
 }
 
 list_tags() {
