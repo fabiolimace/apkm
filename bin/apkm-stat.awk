@@ -1,8 +1,7 @@
 #!/usr/bin/awk -f
 
-# Notes:
+# Note:
 #   * Files encoded using MAC-UTF-8 must be normalized to UTF-8.
-#   * Non-breakin spaces (NBSP, 0xA0) must be converted to regular spaces.
 
 function token_type(token)
 {
@@ -28,25 +27,27 @@ function token_format(token)
 
 function token_case(token)
 {
-    if (token ~ /^[[:lower:]]+(-([[:alpha:]]+))*$/) {
-        return "L"; # Lower case: "word", "compound-wOrD"
-    } else if (token ~ /^[[:upper:]][[:lower:]]*(-([[:alpha:]]+))*$/) {
-        return "S"; # Start case: "Word", "Compound-wOrD"
-    } else if (token ~ /^[[:upper:]]+(-([[:alpha:]]+))*$/) {
-        return "U"; # Upper case: "WORD", "COMPOUND-wOrD"
-    } else if (token ~ /^[[:upper:]]?[[:lower:]]+([[:upper:]][[:lower:]]+)+$/) {
+    token = toascii(token);
+
+    if (token ~ /^[[:upper:]][[:lower:]]*(-([[:alpha:]][[:lower:]]*))*$/) {
+        return "S"; # Start case: "Word", "Compound-word"
+    } else if (token ~ /^[[:lower:]]+(-([[:lower:]]+))*$/) {
+        return "L"; # Lower case: "word", "compound-word"
+    } else if (token ~ /^[[:upper:]]+(-([[:upper:]]+))*$/) {
+        return "U"; # Upper case: "WORD", "COMPOUND-WORD"
+    } else if (token ~ /^[[:alpha:]][[:lower:]]*([[:upper:]][[:lower:]]+)+$/) {
         return "C"; # Camel case: "compoundWord", "CompoundWord"
     } else if (token ~ /^[[:alpha:]]+(-([[:alpha:]]+))*$/) {
         return "M"; # Mixed case: "wOrD", "cOmPoUnD-wOrD"
     } else {
         return "NA"; # None of the above
     }
-    
+
     # NOTE:
-    # UPPERCASE words with a single character, for example "É", are treated as first case words by this function.
+    # UPPERCASE words with a single character, for example "É", are treated as start case words by this function.
     # The author considers it a very convenient behavior that helps to identify proper nouns and the beginning of
-    # sentences, although he admits that it may not be intuitive. The order of the switch cases is important to
-    # preserve this behavior.
+    # sentences, although he admits that it may not be intuitive. The order of the `if`s is important to preserve
+    # this behavior.
 }
 
 function insert_token(token)
@@ -81,7 +82,7 @@ function toascii(string) {
     gsub(/[àáâãäåª]/,"a", string);
     gsub(/[èéêë]/,"e", string);
     gsub(/[ìíîï]/,"i", string);
-    gsub(/[òóôõöº]/,"o", string);
+    gsub(/[òóôõöº°]/,"o", string);
     gsub(/[ùúûü]/,"u", string);
     gsub(/[ýÿ]/,"y", string);
     gsub(/ç/,"c", string);
@@ -92,8 +93,15 @@ function toascii(string) {
     gsub(/ae/,"ae", string);
     gsub(/ß/,"ss", string);
 
-    # Windows-1252 specials
-    gsub(/ß/,"ss", string);
+    # Unicode Punctuation
+    gsub(/–/,"-", string);
+    gsub(/—/,"--", string);
+    gsub(/…/,"...", string);
+    gsub(/[‘’]/,"\x27", string);
+    gsub(/[“”«»]/,"\x22", string);
+
+    # Remove MAC-UTF-8 combining diacritical marks (only those used in Latin-1)
+    gsub(/[\xCC\x80\xCC\x81\xCC\x82\xCC\x83\xCC\x88\xCC\x8A\xCC\xA7]/,"", string);
 
     # Replace non-ASCII with SUB (0x1A)
     gsub(/[^\x00-\x7E]/,"\x1A", string);
@@ -126,20 +134,12 @@ function get_stopwords_regex(    file, regex, line) {
 
 # separates tokens by spaces
 function separate_tokens() {
-
-    line=" " $0 " ";
-
-    # this line is AWK-generic if needed
-    gsub(/[^[:alnum:]]/, " & ", line);
-
-    # these lines are GAWK-specific
-    # line=gensub(/([\(\)\[\]\{\}])/, " \\1 ", "g", line);
-    # line=gensub(/([^,;:.…!?])([,;:.…!?][[:punct:]]*[[:space:]])/, "\\1 \\2", "g", line);
-    # line=gensub(/([^[:alnum:]])([\x22\x27“”‘’«»])([[:alnum:][:punct:]])/, "\\1 \\2 \\3", "g", line);
-    # line=gensub(/([[:alnum:][:punct:]])([\x22\x27“”‘’«»])([^[:alnum:]])/, "\\1 \\2 \\3", "g", line);
-    # line=gensub(/([[:space:]][[:alpha:]]{2,})\/([[:alpha:]]{2,}[[:space:]])/, "\\1 / \\2", "g", line);
-    
-    $0 = line;
+    $0=" " $0 " ";
+    gsub(/\xA0/, " ");
+    gsub(/[]()—{}[]/, " & ");
+    gsub(/[.,;:!?…][[:space:][:punct:]]/, " &");
+    gsub(/[[:space:][:punct:]][\x22\x27“”‘’«»]/, "& ");
+    gsub(/[\x22\x27“”‘’«»][[:space:][:punct:]]/, " &");
 }
 
 function generate_records(    token, count, ratio, sum, sep, r, f, flength, key, val)
