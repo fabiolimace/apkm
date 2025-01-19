@@ -10,10 +10,10 @@ function token_type(token)
 
 function token_format(token)
 {
-    if (token ~ /^[[:alpha:]-]+$/) {
-        return "W"; # Word format: all-letter token (with hyphen)
-    } else if (token ~ /^[[:digit:]]+$/) {
-        return "N"; # Number format: all-digit token
+    if (token ~ /^[[:alpha:]]+(-?[[:alpha:]])*$/) {
+        return "W"; # Word format: all-letter token with optional hyphens
+    } else if (token ~ /^[+-]?([[:digit:]][h°%/:,.+-]?)+$/) {
+        return "N"; # Number format: all-letter token with some optional puncts
     } else if (token ~ /^[[:punct:]]+$/) {
         return "P"; # Punct format: all-punct token
     } else {
@@ -50,6 +50,27 @@ function token_case(token)
     # this behavior.
 }
 
+function token_mask(token)
+{
+    if (token ~ /^[+-]?[0-9]+$/) {
+        return "I"; # Integer mask
+    } else if (token ~ /^[+-]?[0-9][0-9]?[0-9]?([,.]?[0-9][0-9][0-9])*([,.][0-9]+)?$/) {
+        return "R"; # Real number
+    } else if (token ~ /^[0-9]([0-9]|[0-9][0-9][0-9])[/.-][0-9][0-9]?[/.-][0-9]([0-9]|[0-9][0-9][0-9])$/) {
+        return "D"; # Date mask
+    } else if (token ~ /^([0-9][0-9]?[:h][0-9][0-9]|[0-9][0-9]?[h])$/) {
+        return "T"; # Time mask
+    } else if (token ~ /^[+-]?[0-9]+[/][0-9]+$/) {
+        return "F"; # Fraction mask
+    } else if (token ~ /^[+-]?[0-9]+([,.][0-9]+)?%$/) {
+        return "P"; # Percent mask
+    } else if (token ~ /^[+-]?[0-9]+([,.][0-9]+)?°$/) {
+        return "G"; # Degrees mask
+    } else {
+        return "NA"; # None of the above
+    }
+}
+
 function insert_token(token)
 {
     idx++;
@@ -59,6 +80,7 @@ function insert_token(token)
     if (!types[token]) types[token] = token_type(token);
     if (!formats[token]) formats[token] = token_format(token);
     if (!cases[token]) cases[token] = token_case(token);
+    if (!masks[token]) masks[token] = token_mask(token);
 
     if (!indexes[token]) indexes[token] = idx;
     else indexes[token] = indexes[token] "," idx;
@@ -142,6 +164,15 @@ function separate_tokens() {
     gsub(/[\x22\x27“”‘’«»][[:space:][:punct:]]/, " &");
 }
 
+# 123 456 789,01 -> 123456789,01
+function join_numbers(    number) {
+    while (match($0, /[[:space:][:punct:]][0-9]+[[:space:]][0-9][0-9][0-9][[:space:][:punct:]]/)) {
+        number = substr($0, RSTART + 1, RLENGTH - 2);
+        sub(/[[:space:]]/, "", number);
+        $0 = substr($0, 0, RSTART) number substr($0, RSTART + RLENGTH - 1);
+    }
+}
+
 function generate_records(    token, count, ratio, sum, sep, r, f, flength, key, val)
 {
     # start of operational checks #
@@ -180,6 +211,8 @@ function generate_records(    token, count, ratio, sum, sep, r, f, flength, key,
                     records[r,"format"] = formats[token];
                 } else if (key == "case")  {
                     records[r,"case"] = cases[token];
+                } else if (key == "mask")  {
+                    records[r,"mask"] = masks[token];
                 } else if (key == "length")  {
                     records[r,"length"] = length(token);
                 } else if (key == "indexes")  {
@@ -262,7 +295,7 @@ function parse_confs(    file, line, string)
 function parse_fields(string, fields,    default_string)
 {
     gsub(":","=",string);
-    default_string="token,type,count,ratio,format,case,length,indexes";
+    default_string="token,type,count,ratio,format,case,mask,length,indexes";
     if (!string) string = default_string;
     parse_key_values(string, fields, default_string);
 }
@@ -331,11 +364,9 @@ function get_sort_order(    sort_order, o, olength, key)
 
 function remove_stopwords(    i)
 {
-    IGNORECASE=1;
     for (i = 1; i <= NF; i++) {
-        if ($i ~ stopwords_regex) $i = "";
+        if (tolower($i) ~ tolower(stopwords_regex)) $i = "";
     }
-    IGNORECASE=0;
 }
 
 function transform_line(    o, olength, key)
@@ -393,6 +424,7 @@ function endfile() {
     delete counters;
     delete formats;
     delete cases;
+    delete masks;
     delete indexes;
     delete records;
 }
@@ -403,6 +435,7 @@ FNR == 1 && (NR > 1) {
 
 NF {
 
+    join_numbers();
     transform_line();
     separate_tokens();
 
