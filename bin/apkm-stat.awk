@@ -10,7 +10,7 @@ function token_type(token)
 
 function token_format(token)
 {
-    if (token ~ /^[[:alpha:]]+(-?[[:alpha:]])*$/) {
+    if (token ~ /^[[:alpha:]]+([\x27’-]?[[:alpha:]])*$/) {
         return "W"; # Word format: all-letter token with optional hyphens
     } else if (token ~ /^[+-]?([[:digit:]][h°%/:,.+-]?)+$/) {
         return "N"; # Number format: all-letter token with some optional puncts
@@ -29,15 +29,15 @@ function token_case(token)
 {
     token = toascii(token);
 
-    if (token ~ /^[[:upper:]][[:lower:]]*(-([[:alpha:]][[:lower:]]*))*$/) {
+    if (token ~ /^[[:upper:]][[:lower:]]*([\x27’-]([[:alpha:]][[:lower:]]*))*$/) {
         return "S"; # Start case: "Word", "Compound-word"
-    } else if (token ~ /^[[:lower:]]+(-([[:lower:]]+))*$/) {
+    } else if (token ~ /^[[:lower:]]+([\x27’-]([[:lower:]]+))*$/) {
         return "L"; # Lower case: "word", "compound-word"
-    } else if (token ~ /^[[:upper:]]+(-([[:upper:]]+))*$/) {
+    } else if (token ~ /^[[:upper:]]+([\x27’-]([[:upper:]]+))*$/) {
         return "U"; # Upper case: "WORD", "COMPOUND-WORD"
     } else if (token ~ /^[[:alpha:]][[:lower:]]*([[:upper:]][[:lower:]]+)+$/) {
         return "C"; # Camel case: "compoundWord", "CompoundWord"
-    } else if (token ~ /^[[:alpha:]]+(-([[:alpha:]]+))*$/) {
+    } else if (token ~ /^[[:alpha:]]+([\x27’-]([[:alpha:]]+))*$/) {
         return "M"; # Mixed case: "wOrD", "cOmPoUnD-wOrD"
     } else {
         return "NA"; # None of the above
